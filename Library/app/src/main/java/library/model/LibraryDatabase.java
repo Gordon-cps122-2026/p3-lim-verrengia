@@ -184,7 +184,7 @@ public class LibraryDatabase implements java.io.Serializable {
       String title = key;
       String author = books.get(key).getAuthor();
       String callNum = books.get(key).getCallNumber();
-      bookCsv.append("\"title\",\"author\",\"callNum\"\n");
+      bookCsv.append("\"" + title + "\",\"" + author + "\",\"" + callNum + "\"\n");
     }
 
     return bookCsv.toString();
@@ -198,6 +198,14 @@ public class LibraryDatabase implements java.io.Serializable {
    *     <p>Note that each field is in quotes, and the fields are separated by commas.
    */
   public String getBorrowerCsv() {
-    
+    StringBuilder borrowerCsv = new StringBuilder();
+    for (Borrower b : borrowers.values()) {
+      borrowerCsv.append("\"" + b.getFirstName() + 
+                          "\",\"" + b.getLastName() + 
+                          "\",\"" + b.getEmail() + 
+                          "\",\"" + b. getPhone() + "\"\n");
+    }
+
+    return borrowerCsv.toString();
   }
 }
