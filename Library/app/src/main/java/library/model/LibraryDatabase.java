@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeMap;
 
 import main.java.library.model.Book;
 
@@ -22,7 +23,8 @@ public class LibraryDatabase implements java.io.Serializable {
   private static LibraryDatabase instance; // Singleton instance
   private static final String FILE_NAME = "library.db"; // File to store the database
 
-  private HashMap<String, Book> books;
+  private TreeMap<String, Book> books;
+  private TreeMap<String, Borrower> borrowers;
 
   /**
    * Create a LibraryDatabase by reading from a file, or create a new one if the file does not
@@ -102,10 +104,8 @@ public class LibraryDatabase implements java.io.Serializable {
 
   /** Private constructor creates empty library. */
   private LibraryDatabase() {
-    if (instance != null){
-      throw new Exception("LibraryDatabase already exists");
-    }
-    instance = (LibraryDatabase);
+    books = new TreeMap<>();
+    borrowers = new TreeMap<>();
   }
 
   // MORE OF YOUR CODE HERE
@@ -127,7 +127,7 @@ public class LibraryDatabase implements java.io.Serializable {
     }
     else {
       Book book = new Book(title, author, callNumber);
-      books.add(callNumber, book);
+      books.put(callNumber, book);
       return true;
     }
   }
@@ -151,9 +151,9 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all callNumbers.
    */
   public NavigableSet<String> getCallNumbers() {
-    Set<String> callNums = new Set<String>();
+    NavigableSet<String> callNums;
     for (String key : books.keySet()){
-      books.get(key).getCallNumber();
+      callNums.add(books.get(key).getCallNumber());
     }
     return callNums;
   }
@@ -177,13 +177,13 @@ public class LibraryDatabase implements java.io.Serializable {
   public String getBookCsv() {
     StringBuilder bookCsv = new StringBuilder();
     for (String key : books.keySet()){
-      title = key;
-      author = books.get(key).getAuthor();
-      callNum = books.get(key).getCallNum();
-      bookCsv.append("\"title\",\"author\",\"callNum\"\n")
+      String title = key;
+      String author = books.get(key).getAuthor();
+      String callNum = books.get(key).getCallNumber();
+      bookCsv.append("\"title\",\"author\",\"callNum\"\n");
     }
-    result = bookCsv.toString()
-    return result;
+
+    return bookCsv.toString();
   }
 
   /**
