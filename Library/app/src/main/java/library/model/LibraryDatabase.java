@@ -5,13 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NavigableSet;
-import java.util.Set;
-import java.util.TreeMap;
-
-import main.java.library.model.Book;
+import java.util.*;
 
 /**
  * Holds all data for the Library, storing it in a file and reading and updating the file as needed.
@@ -145,7 +139,7 @@ public class LibraryDatabase implements java.io.Serializable {
     if (borrowers.containsKey(email)) {
       return false;}
 
-    borrowers.put(email, new String[]{firstName, lastName, email, phone});
+    borrowers.put(email, new Borrower(firstName, lastName, email, phone));
     return true;
   }
 
@@ -155,7 +149,7 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all callNumbers.
    */
   public NavigableSet<String> getCallNumbers() {
-    NavigableSet<String> callNums;
+    NavigableSet<String> callNums = new TreeSet();
     for (String key : books.keySet()){
       callNums.add(books.get(key).getCallNumber());
     }
@@ -168,9 +162,9 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all emails.
    */
   public NavigableSet<String> getEmails() {
-    NavigableSet<String> emails;
+    NavigableSet<String> emails = new TreeSet<>();
 
-    for (Borrower b : borrowers) {
+    for (Borrower b : borrowers.values()) {
       emails.add(b.getEmail());
     }
 
@@ -204,6 +198,6 @@ public class LibraryDatabase implements java.io.Serializable {
    *     <p>Note that each field is in quotes, and the fields are separated by commas.
    */
   public String getBorrowerCsv() {
-    // YOUR CODE HERE
+    
   }
 }
