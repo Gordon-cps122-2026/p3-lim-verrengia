@@ -127,7 +127,11 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return true if the borrower was added, false if a borrower with the same email already exists
    */
   public boolean addBorrower(String firstName, String lastName, String email, String phone) {
-    // YOUR CODE HERE
+    if (borrowers.containsKey(email)) {
+      return false;}
+
+    borrowers.put(email, new String[]{firstName, lastName, email, phone});
+    return true;
   }
 
   /**
@@ -145,7 +149,13 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all emails.
    */
   public NavigableSet<String> getEmails() {
-    // YOUR CODE HERE
+    NavigableSet<String> emails;
+
+    for (Borrower b : borrowers) {
+      emails.add(b.getEmail());
+    }
+
+    return emails;
   }
 
   /**
