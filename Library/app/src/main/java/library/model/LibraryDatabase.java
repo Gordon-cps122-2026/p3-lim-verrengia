@@ -5,7 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.List;
 import java.util.NavigableSet;
+import java.util.Set;
+
+import main.java.library.model.Book;
 
 /**
  * Holds all data for the Library, storing it in a file and reading and updating the file as needed.
@@ -17,7 +22,7 @@ public class LibraryDatabase implements java.io.Serializable {
   private static LibraryDatabase instance; // Singleton instance
   private static final String FILE_NAME = "library.db"; // File to store the database
 
-  // YOUR CODE HERE
+  private HashMap<String, Book> books;
 
   /**
    * Create a LibraryDatabase by reading from a file, or create a new one if the file does not
@@ -97,7 +102,10 @@ public class LibraryDatabase implements java.io.Serializable {
 
   /** Private constructor creates empty library. */
   private LibraryDatabase() {
-    // YOUR CODE HERE
+    if (instance != null){
+      throw new Exception("LibraryDatabase already exists");
+    }
+    instance = (LibraryDatabase);
   }
 
   // MORE OF YOUR CODE HERE
@@ -114,7 +122,14 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return true if the book was added, false if a book with the same call number already exists
    */
   public boolean addBook(String title, String author, String callNumber) {
-    // YOUR CODE HERE
+    if((title==null||title.isEmpty())||(author==null||author.isEmpty())||(callNumber==null||callNumber.isEmpty())){
+      return false;
+    }
+    else {
+      Book book = new Book(title, author, callNumber);
+      books.add(callNumber, book);
+      return true;
+    }
   }
 
   /**
@@ -136,7 +151,11 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all callNumbers.
    */
   public NavigableSet<String> getCallNumbers() {
-    // YOUR CODE HERE
+    Set<String> callNums = new Set<String>();
+    for (String key : books.keySet()){
+      books.get(key).getCallNumber();
+    }
+    return callNums;
   }
 
   /**
@@ -156,7 +175,15 @@ public class LibraryDatabase implements java.io.Serializable {
    *     <p>Note that each field is in quotes, and the fields are separated by commas.
    */
   public String getBookCsv() {
-    // YOUR CODE HERE
+    StringBuilder bookCsv = new StringBuilder();
+    for (String key : books.keySet()){
+      title = key;
+      author = books.get(key).getAuthor();
+      callNum = books.get(key).getCallNum();
+      bookCsv.append("\"title\",\"author\",\"callNum\"\n")
+    }
+    result = bookCsv.toString()
+    return result;
   }
 
   /**
