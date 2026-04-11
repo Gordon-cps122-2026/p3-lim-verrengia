@@ -116,14 +116,18 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return true if the book was added, false if a book with the same call number already exists
    */
   public boolean addBook(String title, String author, String callNumber) {
-    if((title==null||title.isEmpty())||(author==null||author.isEmpty())||(callNumber==null||callNumber.isEmpty())){
+    if ((title == null || title.isEmpty())
+        || (author == null || author.isEmpty())
+        || (callNumber == null || callNumber.isEmpty())) {
       return false;
     }
-    else {
-      Book book = new Book(title, author, callNumber);
-      books.put(callNumber, book);
-      return true;
+    if (books.containsKey(callNumber)) {
+      return false;
     }
+
+    Book book = new Book(title, author, callNumber);
+    books.put(callNumber, book);
+    return true;
   }
 
   /**
@@ -137,7 +141,8 @@ public class LibraryDatabase implements java.io.Serializable {
    */
   public boolean addBorrower(String firstName, String lastName, String email, String phone) {
     if (borrowers.containsKey(email)) {
-      return false;}
+      return false;
+    }
 
     borrowers.put(email, new Borrower(firstName, lastName, email, phone));
     return true;
@@ -149,8 +154,8 @@ public class LibraryDatabase implements java.io.Serializable {
    * @return A sorted set of all callNumbers.
    */
   public NavigableSet<String> getCallNumbers() {
-    NavigableSet<String> callNums = new TreeSet();
-    for (String key : books.keySet()){
+    NavigableSet<String> callNums = new TreeSet<>();
+    for (String key : books.keySet()) {
       callNums.add(books.get(key).getCallNumber());
     }
     return callNums;
@@ -180,10 +185,10 @@ public class LibraryDatabase implements java.io.Serializable {
    */
   public String getBookCsv() {
     StringBuilder bookCsv = new StringBuilder();
-    for (String key : books.keySet()){
-      String title = key;
+    for (String key : books.keySet()) {
+      String title = books.get(key).getTitle();
       String author = books.get(key).getAuthor();
-      String callNum = books.get(key).getCallNumber();
+      String callNum = key;
       bookCsv.append("\"" + title + "\",\"" + author + "\",\"" + callNum + "\"\n");
     }
 
@@ -200,10 +205,16 @@ public class LibraryDatabase implements java.io.Serializable {
   public String getBorrowerCsv() {
     StringBuilder borrowerCsv = new StringBuilder();
     for (Borrower b : borrowers.values()) {
-      borrowerCsv.append("\"" + b.getFirstName() + 
-                          "\",\"" + b.getLastName() + 
-                          "\",\"" + b.getEmail() + 
-                          "\",\"" + b. getPhone() + "\"\n");
+      borrowerCsv.append(
+          "\""
+              + b.getFirstName()
+              + "\",\""
+              + b.getLastName()
+              + "\",\""
+              + b.getEmail()
+              + "\",\""
+              + b.getPhone()
+              + "\"\n");
     }
 
     return borrowerCsv.toString();
