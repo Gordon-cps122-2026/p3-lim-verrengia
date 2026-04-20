@@ -33,4 +33,8 @@ public class Borrower implements java.io.Serializable {
   public String getPhone() {
     return phone;
   }
+
+  public void testMethod(){
+    System.out.println("testMethod");
+  }
 }
