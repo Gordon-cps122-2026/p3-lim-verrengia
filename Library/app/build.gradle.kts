@@ -37,6 +37,14 @@ application {
     mainClass = "library.App"
 }
 
+/** Run the Swing UI; use from the `Library` directory: `./gradlew :app:runGui` */
+tasks.register<JavaExec>("runGui") {
+    group = "application"
+    description = "Runs library.gui.LibraryGUI"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("library.gui.LibraryGUI")
+}
+
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
