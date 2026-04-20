@@ -1,29 +1,13 @@
 package library.gui;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import java.awt.*;
+import javax.swing.*;
 
 import library.model.LibraryDatabase;
 
 /**
- * Swing front end for the library application. Uses a {@link CardLayout} to move between the home
+ * Swing front end for the library application. Uses a {@link CardLayout} to
+ * move between the home
  * view (books and borrowers) and forms for adding new records.
  */
 public class LibraryGUI extends JFrame {
@@ -51,7 +35,8 @@ public class LibraryGUI extends JFrame {
   private JTextField phoneText;
 
   /**
-   * Builds the frame, lays out all panels, wires listeners, and loads list data from the
+   * Builds the frame, lays out all panels, wires listeners, and loads list data
+   * from the
    * singleton database.
    */
   public LibraryGUI() {
@@ -60,7 +45,8 @@ public class LibraryGUI extends JFrame {
 
     buildListAreas();
 
-    // CardLayout is installed on the content pane so the three primary views fill the frame.
+    // CardLayout is installed on the content pane so the three primary views fill
+    // the frame.
     getContentPane().setLayout(cardLayout);
     getContentPane().add(createHomePanel(), CARD_HOME);
     getContentPane().add(createAddBookPanel(), CARD_ADD_BOOK);
@@ -85,7 +71,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Instantiates {@link LibraryGUI} and makes it visible. Intended to be invoked on the EDT.
+   * Instantiates {@link LibraryGUI} and makes it visible. Intended to be invoked
+   * on the EDT.
    */
   private static void createAndShowGui() {
     LibraryGUI frame = new LibraryGUI();
@@ -108,7 +95,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Builds the home card: a tabbed pane for books and borrowers plus navigation buttons.
+   * Builds the home card: a tabbed pane for books and borrowers plus navigation
+   * buttons.
    *
    * @return the fully configured home panel
    */
@@ -123,7 +111,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Builds the Books tab with header, scrollable list, and an Add Book control aligned to the
+   * Builds the Books tab with header, scrollable list, and an Add Book control
+   * aligned to the
    * bottom-right.
    *
    * @return the Books tab component
@@ -138,7 +127,8 @@ public class LibraryGUI extends JFrame {
 
     JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
     JButton addBook = new JButton("Add Book");
-    // Navigate to the add-book form while keeping the Books tab selected for when we return.
+    // Navigate to the add-book form while keeping the Books tab selected for when
+    // we return.
     addBook.addActionListener(e -> cardLayout.show(getContentPane(), CARD_ADD_BOOK));
     south.add(addBook);
     tab.add(south, BorderLayout.SOUTH);
@@ -147,7 +137,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Builds the Borrowers tab with header, scrollable list, and an Add Borrower control aligned to
+   * Builds the Borrowers tab with header, scrollable list, and an Add Borrower
+   * control aligned to
    * the bottom-right.
    *
    * @return the Borrowers tab component
@@ -170,7 +161,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Builds the add-book form using {@link GridBagLayout} so labels stay right-aligned and fields
+   * Builds the add-book form using {@link GridBagLayout} so labels stay
+   * right-aligned and fields
    * expand horizontally.
    *
    * @return the add-book card
@@ -241,7 +233,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Builds the add-borrower form using {@link GridBagLayout} for consistent alignment with the
+   * Builds the add-borrower form using {@link GridBagLayout} for consistent
+   * alignment with the
    * book form.
    *
    * @return the add-borrower card
@@ -290,7 +283,8 @@ public class LibraryGUI extends JFrame {
           LibraryDatabase db = LibraryDatabase.getInstance();
           if (db.addBorrower(first, last, email, phone)) {
             if (!persistDatabaseSafely()) {
-              // Stay on the form: the borrower is already in memory but not persisted to disk.
+              // Stay on the form: the borrower is already in memory but not persisted to
+              // disk.
               return;
             }
             refreshBorrowerList();
@@ -313,15 +307,17 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Appends a label and field row to a {@link GridBagLayout} form. The label is right-aligned; the
+   * Appends a label and field row to a {@link GridBagLayout} form. The label is
+   * right-aligned; the
    * field grows to fill remaining horizontal space.
    *
-   * @param form parent form panel
-   * @param grid layout shared with {@code form}
-   * @param gbc constraints object reused across rows
-   * @param row vertical position (1-based below the header)
-   * @param labelText right-aligned caption text, including trailing colon where required
-   * @param field text entry component for the row
+   * @param form      parent form panel
+   * @param grid      layout shared with {@code form}
+   * @param gbc       constraints object reused across rows
+   * @param row       vertical position (1-based below the header)
+   * @param labelText right-aligned caption text, including trailing colon where
+   *                  required
+   * @param field     text entry component for the row
    */
   private void addLabeledRow(
       JPanel form, GridBagLayout grid, GridBagConstraints gbc, int row, String labelText, JTextField field) {
@@ -345,8 +341,10 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Applies the primary action styling (blue background, white text). {@code setOpaque(true)} and
-   * {@code setBorderPainted(false)} help the custom colors show across common look-and-feels.
+   * Applies the primary action styling (blue background, white text).
+   * {@code setOpaque(true)} and
+   * {@code setBorderPainted(false)} help the custom colors show across common
+   * look-and-feels.
    *
    * @param button action button to style
    */
@@ -374,7 +372,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Shows the home card and selects the Books tab so returning navigation matches the button
+   * Shows the home card and selects the Books tab so returning navigation matches
+   * the button
    * label.
    */
   private void showHomeSelectingBooksTab() {
@@ -383,7 +382,8 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Shows the home card and selects the Borrowers tab so returning navigation matches the button
+   * Shows the home card and selects the Borrowers tab so returning navigation
+   * matches the button
    * label.
    */
   private void showHomeSelectingBorrowersTab() {
@@ -392,10 +392,12 @@ public class LibraryGUI extends JFrame {
   }
 
   /**
-   * Persists the singleton {@link LibraryDatabase} to disk. Errors are surfaced to the user with a
+   * Persists the singleton {@link LibraryDatabase} to disk. Errors are surfaced
+   * to the user with a
    * modal dialog.
    *
-   * @return {@code true} if the write succeeded; {@code false} if an error occurred
+   * @return {@code true} if the write succeeded; {@code false} if an error
+   *         occurred
    */
   private boolean persistDatabaseSafely() {
     try {
