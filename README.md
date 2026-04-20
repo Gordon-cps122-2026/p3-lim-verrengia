@@ -1,6 +1,6 @@
 Save the prompts here.
 
-Prompt 1:
+(Discarded) Prompt 1:
 Please help me create a UI in InventoryUI.java that fits the following description:
 
 When the UI is started up a window with a frame title "Library App" at the top. There are two tabs at the top called "Books" and "Borrowers".
