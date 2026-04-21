@@ -40,9 +40,9 @@ application {
 /** Run the Swing UI; use from the `Library` directory: `./gradlew :app:runGui` */
 tasks.register<JavaExec>("runGui") {
     group = "application"
-    description = "Runs library.gui.LibraryGUI"
+    description = "Runs library.gui.MainWindow"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("library.gui.LibraryGUI")
+    mainClass.set("library.gui.MainWindow")
 }
 
 tasks.named<Test>("test") {
