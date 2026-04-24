@@ -28,8 +28,8 @@ public class CheckedOut {
   }
 
   public String getDueDate() {
-    return dueDate.get(Calendar.MONTH)
-        + " "
+    return dueDate.get(Calendar.MONTH + 1)
+        + "/"
         + dueDate.get(Calendar.DAY_OF_MONTH)
         + " "
         + dueDate.get(Calendar.YEAR);
@@ -44,7 +44,7 @@ public class CheckedOut {
         return false;
     }
 
-    dueDate.add(dueDate.get(Calendar.DAY_OF_MONTH), 28);
+    dueDate.add(Calendar.DAY_OF_MONTH, 28);
     renewed = true;
 
     return true;

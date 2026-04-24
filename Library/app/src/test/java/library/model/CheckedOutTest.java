@@ -1,8 +1,14 @@
 package library.model;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 public class CheckedOutTest {
 
+
+    public static void main(String[] args) {
+        CheckedOut instance = new CheckedOut(null, null);
+        System.out.println(instance.getDueDate());
+
+        instance.renewDueDate();
+        System.out.println(instance.getDueDate());
+    }
+    
 }
