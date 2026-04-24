@@ -220,4 +220,51 @@ public class LibraryDatabase implements java.io.Serializable {
 
     return borrowerCsv.toString();
   }
+
+  public boolean checkout(String callNumber, String email){
+    Book book = books.get(callNumber);
+    if (book.isCheckedOut()){
+      return false;
+    }
+    else{
+      CheckedOut checkedOut = book.getCheckedOut();
+      Borrower borrower = checkedOut.getBorrower();
+      book.setCheckedOut(borrower);
+      borrower.setCheckedOut(book);
+      return true;
+
+    }
+  }
+
+  public boolean renew(String callNumber){
+    Book book = books.get(callNumber);
+    if(!(book.isCheckedOut())){
+      return false;
+    }
+    else{
+      CheckedOut checkedout = book.getCheckedOut();
+      if(checkedOut.isRenewed){
+        return false;
+      }
+      else{
+        checkedout.renew();
+        return true;
+      }
+    }
+  }
+
+  public boolean returnBook(String callNumber){
+    Book book = books.get(callNumber);
+    if(book.isCheckedOut()){
+      CheckedOut checkedout = book1.getCheckedOut();
+      Borrower borrower = checkedOut.getBorrower();
+      book.removeCheckedOut();
+      borrower.removeCheckedOut();
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
 }

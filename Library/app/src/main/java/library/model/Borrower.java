@@ -10,6 +10,7 @@ public class Borrower implements java.io.Serializable {
   private String lastName;
   private String email;
   private String phone;
+  private Checkedout checkedOut;
 
   public Borrower(String firstName, String lastName, String email, String phone) {
     this.firstName = firstName;
@@ -32,5 +33,15 @@ public class Borrower implements java.io.Serializable {
 
   public String getPhone() {
     return phone;
+  }
+
+  public boolean setCheckedOut(String email){
+    checkedOut = CheckedOut(callNumber,email);
+    return true;
+  }
+
+  public boolean removeCheckedOut(){
+    checkedOut = CheckedOut(null,null);
+    return true;
   }
 }
