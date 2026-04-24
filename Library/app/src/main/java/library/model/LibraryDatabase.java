@@ -30,17 +30,18 @@ public class LibraryDatabase implements java.io.Serializable {
 
   /**
    * In the normal (non-testing) case, create a LibraryDatabase by reading from a file, or create a
-   * new one if the file does not exist. In the testing case, create a new empty LibraryDatabase.
+   * new one if the file does not exist. In the testing case, return a new empty LibraryDatabase on
+   * every call so tests can reset state between runs.
    *
    * @param testing If true, the database always starts empty.
    */
   public static LibraryDatabase getInstance(boolean testing) {
 
+    if (testing) {
+      instance = new LibraryDatabase();
+      return instance;
+    }
     if (instance == null) {
-      if (testing) {
-        instance = new LibraryDatabase();
-        return instance;
-      }
       try {
         readFromFile();
       } catch (FileNotFoundException e) {
@@ -219,4 +220,51 @@ public class LibraryDatabase implements java.io.Serializable {
 
     return borrowerCsv.toString();
   }
+
+  public boolean checkout(String callNumber, String email){
+    Book book = books.get(callNumber);
+    if (book.isCheckedOut()){
+      return false;
+    }
+    else{
+      CheckedOut checkedOut = book.getCheckedOut();
+      Borrower borrower = checkedOut.getBorrower();
+      book.setCheckedOut(borrower);
+      borrower.setCheckedOut(book);
+      return true;
+
+    }
+  }
+
+  public boolean renew(String callNumber){
+    Book book = books.get(callNumber);
+    if(!(book.isCheckedOut())){
+      return false;
+    }
+    else{
+      CheckedOut checkedout = book.getCheckedOut();
+      if(checkedOut.isRenewed){
+        return false;
+      }
+      else{
+        checkedout.renew();
+        return true;
+      }
+    }
+  }
+
+  public boolean returnBook(String callNumber){
+    Book book = books.get(callNumber);
+    if(book.isCheckedOut()){
+      CheckedOut checkedout = book1.getCheckedOut();
+      Borrower borrower = checkedOut.getBorrower();
+      book.removeCheckedOut();
+      borrower.removeCheckedOut();
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
 }
