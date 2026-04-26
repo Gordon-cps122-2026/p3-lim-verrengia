@@ -28,7 +28,7 @@ public class CheckedOut {
   }
 
   public String getDueDate() {
-    return dueDate.get(Calendar.MONTH + 1)
+    return dueDate.get(Calendar.MONTH) + 1
         + "/"
         + dueDate.get(Calendar.DAY_OF_MONTH)
         + " "
