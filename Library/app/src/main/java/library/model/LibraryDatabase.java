@@ -221,50 +221,47 @@ public class LibraryDatabase implements java.io.Serializable {
     return borrowerCsv.toString();
   }
 
-  public boolean checkout(String callNumber, String email){
+  public boolean checkout(String email, String callNumber) {
     Book book = books.get(callNumber);
-    if (book.isCheckedOut()){
+    Borrower borrower = borrowers.get(email);
+
+    if (book.isCheckedOut()) {
       return false;
-    }
-    else{
-      CheckedOut checkedOut = book.getCheckedOut();
-      Borrower borrower = checkedOut.getBorrower();
-      book.setCheckedOut(borrower);
-      borrower.setCheckedOut(book);
-      return true;
+    } else {
+      CheckedOut checkedOut = new CheckedOut(book, borrower);
 
-    }
-  }
+      book.addCheckedOut(email, checkedOut);
+      borrower.addCheckedOut(callNumber, checkedOut);
 
-  public boolean renew(String callNumber){
-    Book book = books.get(callNumber);
-    if(!(book.isCheckedOut())){
-      return false;
-    }
-    else{
-      CheckedOut checkedout = book.getCheckedOut();
-      if(checkedOut.isRenewed){
-        return false;
-      }
-      else{
-        checkedout.renew();
-        return true;
-      }
-    }
-  }
-
-  public boolean returnBook(String callNumber){
-    Book book = books.get(callNumber);
-    if(book.isCheckedOut()){
-      CheckedOut checkedout = book1.getCheckedOut();
-      Borrower borrower = checkedOut.getBorrower();
-      book.removeCheckedOut();
-      borrower.removeCheckedOut();
       return true;
     }
-    else{
+  }
+
+  public boolean renewDueDate(String email, String callNumber) {
+    Book book = books.get(callNumber);
+    if (!(book.isCheckedOut())) {
       return false;
+    }
+
+    CheckedOut checkedOut = book.getCheckedOut(email);
+    if (checkedOut.isRenewed()) {
+      return false;
+    } else {
+      checkedOut.renewDueDate();
+      return true;
     }
   }
 
+  public boolean returnBook(String email, String callNumber) {
+    Book book = books.get(callNumber);
+    Borrower borrower = borrowers.get(email);
+
+    if (book.isCheckedOut()) {
+      book.removeCheckedOut(email);
+      borrower.removeCheckedOut(callNumber);
+      return true;
+    }
+
+    return false;
+  }
 }
