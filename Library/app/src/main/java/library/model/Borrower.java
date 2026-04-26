@@ -10,12 +10,14 @@ public class Borrower implements java.io.Serializable {
   private String lastName;
   private String email;
   private String phone;
+  private TreeMap<String, CheckedOut> checkedOut;
 
   public Borrower(String firstName, String lastName, String email, String phone) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.email = email;
     this.phone = phone;
+    this.checkedOut = new TreeMap<>();
   }
 
   public String getFirstName() {
@@ -32,5 +34,19 @@ public class Borrower implements java.io.Serializable {
 
   public String getPhone() {
     return phone;
+  }
+
+  public boolean addCheckedOut(String callNum, CheckedOut newCheckedOut){
+    checkedOut.put(callNum, newCheckedOut);
+    return true;
+  }
+
+  public CheckedOut getCheckedOut(String callNum){
+    return checkedOut.get(callNum);
+  }
+
+  public boolean removeCheckedOut(String callNum){
+    checkedOut.remove(callNum);
+    return true;
   }
 }
