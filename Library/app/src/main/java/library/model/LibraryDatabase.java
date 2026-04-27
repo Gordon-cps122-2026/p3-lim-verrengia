@@ -243,7 +243,7 @@ public class LibraryDatabase implements java.io.Serializable {
       return false;
     }
 
-    CheckedOut checkedOut = book.getCheckedOut(email);
+    CheckedOut checkedOut = book.getCheckedOut();
     if (checkedOut.isRenewed()) {
       return false;
     } else {
@@ -274,11 +274,11 @@ public class LibraryDatabase implements java.io.Serializable {
     result.append("Call Number: " + book.getCallNumber() + "\n");
 
     if (book.isCheckedOut()) {
-      CheckedOut checkedOut = book.getCheckedOut(callNumber);
+      CheckedOut checkedOut = book.getCheckedOut();
       Borrower borrower = checkedOut.getBorrower();
 
       result.append("Status: unavailable\n");
-      result.append("Borrower: " + borrower.getFirstName() + borrower.getLastName() + "\n");
+      result.append("Borrower: " + borrower.getFirstName() + " " + borrower.getLastName() + "\n");
       result.append("Due Date: " + checkedOut.getDueDate() + "\n");
     } else {
       result.append("Status: available");
@@ -287,18 +287,24 @@ public class LibraryDatabase implements java.io.Serializable {
     return result.toString();
   }
 
-  //TODO
   public String searchBorrower(String email) {
     Borrower borrower = borrowers.get(email);
     StringBuilder result = new StringBuilder();
 
     if (borrower.hasCheckedOut()) {
       result.append("Books checked out:\n");
-
+      for (Book book : borrower.getAllBooks()) {
+        result.append(
+            book.getAuthor()
+                + ", "
+                + book.getTitle()
+                + ". Due: "
+                + borrower.getCheckedOut(book.getCallNumber()).getDueDate()
+                + "\n");
+      }
     } else {
       result.append("No books has been checked out by this borrower.");
     }
-
     return result.toString();
   }
 }
