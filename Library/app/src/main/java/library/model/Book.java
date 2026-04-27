@@ -4,17 +4,18 @@ import java.util.TreeMap;
 
 public class Book implements java.io.Serializable {
 
+  //TODO make a system that can check if the due date is expired
+
   private String title;
   private String author;
   private String callNumber;
   private static final long serialVersionUID = 1L;
-  private TreeMap<String, CheckedOut> checkedOut;
+  private CheckedOut checkedOut;
 
   public Book(String title, String author, String callNumber) {
     this.title = title;
     this.author = author;
     this.callNumber = callNumber;
-    checkedOut = new TreeMap<>();
   }
 
   public String getTitle() {
@@ -30,23 +31,23 @@ public class Book implements java.io.Serializable {
   }
 
   public boolean isCheckedOut(){
-    if (checkedOut.isEmpty()) {
-      return false;
-    }
+    if (checkedOut == null) {
       return true;
+    }
+      return false;
   }
 
-  public boolean addCheckedOut(String borrowerEmail, CheckedOut newCheckedOut){
-    checkedOut.put(borrowerEmail, newCheckedOut);
+  public boolean addCheckedOut(String callNumber, CheckedOut newCheckedOut){
+    checkedOut = newCheckedOut;
     return true;
   }
 
-  public CheckedOut getCheckedOut(String borrowerEmail){
-    return checkedOut.get(borrowerEmail);
+  public CheckedOut getCheckedOut(String callNumber){
+    return checkedOut;
   }
 
-  public boolean removeCheckedOut(String borrowerEmail){
-    checkedOut.remove(borrowerEmail);
+  public boolean removeCheckedOut(String callNumber){
+    checkedOut = null;
     return true;
   }
 }

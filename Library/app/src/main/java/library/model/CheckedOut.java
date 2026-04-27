@@ -4,6 +4,8 @@ import java.util.*;
 
 public class CheckedOut {
 
+  //TODO make a system that can check if the due date is expired
+
   private Book book;
   private Borrower borrower;
   private Calendar dueDate;
