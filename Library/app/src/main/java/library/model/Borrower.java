@@ -36,17 +36,17 @@ public class Borrower implements java.io.Serializable {
     return phone;
   }
 
-  public boolean addCheckedOut(String email, CheckedOut newCheckedOut){
-    checkedOut.put(email, newCheckedOut);
+  public boolean addCheckedOut(String callNumber, CheckedOut newCheckedOut){
+    checkedOut.put(callNumber, newCheckedOut);
     return true;
   }
 
-  public CheckedOut getCheckedOut(String email){
-    return checkedOut.get(email);
+  public CheckedOut getCheckedOut(String callNumber){
+    return checkedOut.get(callNumber);
   }
 
-  public boolean removeCheckedOut(String email){
-    checkedOut.remove(email);
+  public boolean removeCheckedOut(String callNumber){
+    checkedOut.remove(callNumber);
     return true;
   }
 

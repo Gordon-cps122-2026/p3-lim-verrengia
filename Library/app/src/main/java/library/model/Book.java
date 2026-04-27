@@ -42,7 +42,7 @@ public class Book implements java.io.Serializable {
     return true;
   }
 
-  public CheckedOut getCheckedOut(String callNumber){
+  public CheckedOut getCheckedOut(){
     return checkedOut;
   }
 
