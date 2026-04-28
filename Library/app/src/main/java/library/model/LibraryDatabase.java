@@ -223,6 +223,14 @@ public class LibraryDatabase implements java.io.Serializable {
     return borrowerCsv.toString();
   }
 
+  /**
+  * Checks out a book to a borrower.
+  *
+  * @param callNumber The call number of the book to check out
+  * @param email The email of the borrower checking out the book
+  * @return true if the checkout was successful, false if the book or borrower does not exist,
+  *     or if the book is already checked out
+  */
   public boolean checkout(String callNumber, String email) {
     Book book = books.get(callNumber);
     Borrower borrower = borrowers.get(email);
@@ -237,6 +245,13 @@ public class LibraryDatabase implements java.io.Serializable {
     return true;
   }
 
+  /**
+  * Renews the due date of a checked out book by 28 days.
+  *
+  * @param callNumber The call number of the book to renew
+  * @return true if the renewal was successful, false if the book does not exist,
+  *     is not checked out, or has already been renewed
+  */
   public boolean renew(String callNumber) {
     Book book = books.get(callNumber);
     if (book == null || !book.isCheckedOut()) return false;
@@ -249,6 +264,13 @@ public class LibraryDatabase implements java.io.Serializable {
     return true;
   }
 
+  /**
+  * Returns a checked out book to the library.
+  *
+  * @param callNumber The call number of the book to return
+  * @return true if the return was successful, false if the book does not exist
+  *     or is not checked out
+  */
   public boolean returnBook(String callNumber) {
     Book book = books.get(callNumber);
 
@@ -262,6 +284,13 @@ public class LibraryDatabase implements java.io.Serializable {
     return true;
   }
 
+  /**
+  * Checks whether a book is currently checked out.
+  *
+  * @param callNumber The call number of the book to check
+  * @return true if the book is checked out, false if the book does not exist
+  *     or is not checked out
+  */
   public boolean isCheckedOut(String callNumber) {
     Book book = books.get(callNumber);
     if (book == null) return false;
@@ -269,6 +298,12 @@ public class LibraryDatabase implements java.io.Serializable {
     return book.isCheckedOut();
   }
 
+  /**
+  * Gets the due date of a checked out book.
+  *
+  * @param callNumber The call number of the book
+  * @return the due date of the book, or null if the book does not exist or is not checked out
+  */
   public LocalDate getDueDate(String callNumber) {
     Book book = books.get(callNumber);
     if (book == null || !book.isCheckedOut()) return null;
@@ -276,6 +311,13 @@ public class LibraryDatabase implements java.io.Serializable {
     return book.getCheckedOut().getDueDate();
   }
 
+  /**
+ * Returns information about a book, including its checkout status.
+ * If the book is checked out, the borrower's name and due date are also included.
+ *
+ * @param callNumber The call number of the book to search for
+ * @return a string containing the book's title, author, call number, and availability status
+ */
   public String searchBook(String callNumber) {
     Book book = books.get(callNumber);
     StringBuilder result = new StringBuilder();
@@ -298,9 +340,19 @@ public class LibraryDatabase implements java.io.Serializable {
     return result.toString();
   }
 
+  /**
+ * Returns information about a borrower and all books currently checked out by a borrower.
+ *
+ * @param email The email of the borrower to search for
+ * @return a string listing all checked out books, or a message if none are checked out
+ */
   public String searchBorrower(String email) {
     Borrower borrower = borrowers.get(email);
     StringBuilder result = new StringBuilder();
+
+    result.append("Name: " + borrower.getFirstName() + " " + borrower.getLastName() + "\n");
+    result.append("Email: " + borrower.getEmail() + "\n");
+    result.append("Phone: " + borrower.getPhone() + "\n\n");
 
     if (borrower.hasCheckedOut()) {
       result.append("Books checked out:\n");
