@@ -1,14 +1,15 @@
 package library.model;
 
+import java.time.LocalDate;
 import java.util.*;
 
 public class CheckedOut {
 
-  //TODO make a system that can check if the due date is expired
+  // TODO make a system that can check if the due date is expired
 
   private Book book;
   private Borrower borrower;
-  private Calendar dueDate;
+  private LocalDate dueDate;
   private boolean renewed;
 
   public CheckedOut(Book book, Borrower borrower) {
@@ -16,9 +17,7 @@ public class CheckedOut {
     this.borrower = borrower;
     this.renewed = false;
 
-    Calendar now = Calendar.getInstance();
-    now.add(Calendar.DAY_OF_MONTH, 28);
-    this.dueDate = now;
+    this.dueDate = LocalDate.now().plusDays(28);
   }
 
   public Book getBook() {
@@ -29,12 +28,8 @@ public class CheckedOut {
     return borrower;
   }
 
-  public String getDueDate() {
-    return dueDate.get(Calendar.MONTH) + 1
-        + "/"
-        + dueDate.get(Calendar.DAY_OF_MONTH)
-        + "/"
-        + dueDate.get(Calendar.YEAR);
+  public LocalDate getDueDate() {
+    return dueDate;
   }
 
   public boolean isRenewed() {
@@ -42,11 +37,10 @@ public class CheckedOut {
   }
 
   public boolean renewDueDate() {
-    if (renewed == true) {
-        return false;
+    if (renewed) {
+      return false;
     }
-
-    dueDate.add(Calendar.DAY_OF_MONTH, 28);
+    dueDate = dueDate.plusDays(28);
     renewed = true;
 
     return true;

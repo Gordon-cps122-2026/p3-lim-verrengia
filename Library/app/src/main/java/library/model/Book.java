@@ -32,9 +32,9 @@ public class Book implements java.io.Serializable {
 
   public boolean isCheckedOut(){
     if (checkedOut == null) {
-      return true;
-    }
       return false;
+    }
+      return true;
   }
 
   public boolean addCheckedOut(String callNumber, CheckedOut newCheckedOut){

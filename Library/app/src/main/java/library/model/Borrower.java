@@ -60,7 +60,7 @@ public class Borrower implements java.io.Serializable {
   public Collection<Book> getAllBooks() {
     Collection<Book> result = new ArrayList<>();
     
-    if (!hasCheckedOut()) {
+    if (hasCheckedOut()) {
       for (CheckedOut i : checkedOut.values()) {
         result.add(i.getBook());
       }

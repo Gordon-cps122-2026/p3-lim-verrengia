@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.LocalDate;
 import java.util.*;
+import java.time.LocalDate;
 
 /**
  * Holds all data for the Library, storing it in a file and reading and updating the file as needed.
@@ -221,48 +223,57 @@ public class LibraryDatabase implements java.io.Serializable {
     return borrowerCsv.toString();
   }
 
-  public boolean checkout(String email, String callNumber) {
+  public boolean checkout(String callNumber, String email) {
     Book book = books.get(callNumber);
     Borrower borrower = borrowers.get(email);
 
-    if (book.isCheckedOut()) {
-      return false;
-    } else {
-      CheckedOut checkedOut = new CheckedOut(book, borrower);
+    if (book == null || borrower == null) return false;
+    if (book.isCheckedOut()) return false;
 
-      book.addCheckedOut(callNumber, checkedOut);
-      borrower.addCheckedOut(email, checkedOut);
+    CheckedOut checkedOut = new CheckedOut(book, borrower);
+    book.addCheckedOut(callNumber, checkedOut);
+    borrower.addCheckedOut(callNumber, checkedOut);
 
-      return true;
-    }
+    return true;
   }
 
-  public boolean renewDueDate(String email, String callNumber) {
+  public boolean renew(String callNumber) {
     Book book = books.get(callNumber);
-    if (!(book.isCheckedOut())) {
-      return false;
-    }
+    if (book == null || !book.isCheckedOut()) return false;
 
     CheckedOut checkedOut = book.getCheckedOut();
-    if (checkedOut.isRenewed()) {
-      return false;
-    } else {
-      checkedOut.renewDueDate();
-      return true;
-    }
+    if (checkedOut.isRenewed()) return false;
+
+    checkedOut.renewDueDate();
+
+    return true;
   }
 
-  public boolean returnBook(String email, String callNumber) {
+  public boolean returnBook(String callNumber) {
     Book book = books.get(callNumber);
-    Borrower borrower = borrowers.get(email);
 
-    if (book.isCheckedOut()) {
-      book.removeCheckedOut(email);
-      borrower.removeCheckedOut(callNumber);
-      return true;
-    }
+    if (book == null || !book.isCheckedOut()) return false;
 
-    return false;
+    Borrower borrower = book.getCheckedOut().getBorrower();
+
+    borrower.removeCheckedOut(callNumber);
+    book.removeCheckedOut(callNumber);
+
+    return true;
+  }
+
+  public boolean isCheckedOut(String callNumber) {
+    Book book = books.get(callNumber);
+    if (book == null) return false;
+
+    return book.isCheckedOut();
+  }
+
+  public LocalDate getDueDate(String callNumber) {
+    Book book = books.get(callNumber);
+    if (book == null || !book.isCheckedOut()) return null;
+
+    return book.getCheckedOut().getDueDate();
   }
 
   public String searchBook(String callNumber) {
