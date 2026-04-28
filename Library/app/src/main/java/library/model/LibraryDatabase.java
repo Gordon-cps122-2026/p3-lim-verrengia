@@ -133,6 +133,33 @@ public class LibraryDatabase implements java.io.Serializable {
     return true;
   }
 
+
+  /**
+   * Add a book to the library where a copy of it already exists.
+   *
+   * @param callNumber The book's call number
+   * @return true if the book was added, false if a book with the same call number does not exist
+   */
+    public boolean addBookCopy(String callNumber){
+
+    Collection callNums = new ArrayList<>();
+    for (String i : books.keySet()){
+      if(i.contains(callNumber)){
+        callNums.add(i);
+      }
+    }
+    int copyNum = callNums.size();
+      if(copyNum==0){
+        return false;
+      }
+      else{
+        Book oldBook = books.get(callNumber);
+        Book book = new Book(oldBook.getTitle(),oldBook.getAuthor(),callNumber,copyNum+1);
+        books.put(callNumber+Integer.toString(copyNum+1),book);
+        return true;
+      }
+    }
+
   /**
    * Add a borrower to the library, without knowing anything about objects in the library.
    *
