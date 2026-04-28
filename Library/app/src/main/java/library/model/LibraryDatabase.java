@@ -128,7 +128,7 @@ public class LibraryDatabase implements java.io.Serializable {
       return false;
     }
 
-    Book book = new Book(title, author, callNumber);
+    Book book = new Book(title, author, callNumber, 1);
     books.put(callNumber, book);
     return true;
   }
@@ -227,11 +227,13 @@ public class LibraryDatabase implements java.io.Serializable {
   * Checks out a book to a borrower.
   *
   * @param callNumber The call number of the book to check out
+  * @param copyNum The copy number of the book
   * @param email The email of the borrower checking out the book
   * @return true if the checkout was successful, false if the book or borrower does not exist,
   *     or if the book is already checked out
   */
-  public boolean checkout(String callNumber, String email) {
+  public boolean checkout(String callNumber, int copyNum, String email) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
     Borrower borrower = borrowers.get(email);
 
@@ -249,10 +251,12 @@ public class LibraryDatabase implements java.io.Serializable {
   * Renews the due date of a checked out book by 28 days.
   *
   * @param callNumber The call number of the book to renew
+  * @param copyNum The copy number of the book
   * @return true if the renewal was successful, false if the book does not exist,
   *     is not checked out, or has already been renewed
   */
-  public boolean renew(String callNumber) {
+  public boolean renew(String callNumber, int copyNum) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
     if (book == null || !book.isCheckedOut()) return false;
 
@@ -268,10 +272,12 @@ public class LibraryDatabase implements java.io.Serializable {
   * Returns a checked out book to the library.
   *
   * @param callNumber The call number of the book to return
+  * @param copyNum The copy number of the book
   * @return true if the return was successful, false if the book does not exist
   *     or is not checked out
   */
-  public boolean returnBook(String callNumber) {
+  public boolean returnCopy(String callNumber, int copyNum) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
 
     if (book == null || !book.isCheckedOut()) return false;
@@ -288,10 +294,12 @@ public class LibraryDatabase implements java.io.Serializable {
   * Checks whether a book is currently checked out.
   *
   * @param callNumber The call number of the book to check
+  * @param copyNum The copy number of the book
   * @return true if the book is checked out, false if the book does not exist
   *     or is not checked out
   */
-  public boolean isCheckedOut(String callNumber) {
+  public boolean isCheckedOut(String callNumber, int copyNum) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
     if (book == null) return false;
 
@@ -302,9 +310,11 @@ public class LibraryDatabase implements java.io.Serializable {
   * Gets the due date of a checked out book.
   *
   * @param callNumber The call number of the book
+  * @param copyNum The copy number of the book
   * @return the due date of the book, or null if the book does not exist or is not checked out
   */
-  public LocalDate getDueDate(String callNumber) {
+  public LocalDate getDueDate(String callNumber, int copyNum) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
     if (book == null || !book.isCheckedOut()) return null;
 
@@ -316,9 +326,11 @@ public class LibraryDatabase implements java.io.Serializable {
  * If the book is checked out, the borrower's name and due date are also included.
  *
  * @param callNumber The call number of the book to search for
+ * @param copyNum The copy number of the book
  * @return a string containing the book's title, author, call number, and availability status
  */
-  public String searchBook(String callNumber) {
+  public String getCopyInfo(String callNumber, int copyNum) {
+    callNumber += copyNum;
     Book book = books.get(callNumber);
     StringBuilder result = new StringBuilder();
 
@@ -346,7 +358,7 @@ public class LibraryDatabase implements java.io.Serializable {
  * @param email The email of the borrower to search for
  * @return a string listing all checked out books, or a message if none are checked out
  */
-  public String searchBorrower(String email) {
+  public String getBorrowerInfo(String email) {
     Borrower borrower = borrowers.get(email);
     StringBuilder result = new StringBuilder();
 

@@ -9,6 +9,7 @@ public class Book implements java.io.Serializable {
   private String callNumber;
   private static final long serialVersionUID = 1L;
   private CheckedOut checkedOut;
+  private int copy;
 
   /**
   * Creates a Book with the given title, author, and call number.
@@ -17,10 +18,11 @@ public class Book implements java.io.Serializable {
   * @param author The book's author
   * @param callNumber The book's call number
   */
-  public Book(String title, String author, String callNumber) {
+  public Book(String title, String author, String callNumber, int copy) {
     this.title = title;
     this.author = author;
     this.callNumber = callNumber;
+    this.copy = copy;
   }
 
   /**
