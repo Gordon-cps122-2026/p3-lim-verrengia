@@ -1,96 +1,73 @@
 package library.model;
 
-public class Book implements java.io.Serializable {
+import java.util.TreeMap;
 
-  //TODO make a system that can check if the due date is expired
+public class Book implements java.io.Serializable {
 
   private String title;
   private String author;
   private String callNumber;
   private static final long serialVersionUID = 1L;
-  private CheckedOut checkedOut;
+  private TreeMap<String, CheckedOut> checkedOut;
+  private int copy;
+  private String key;
 
-  /**
-  * Creates a Book with the given title, author, and call number.
-  *
-  * @param title The book's title
-  * @param author The book's author
-  * @param callNumber The book's call number
-  */
-  public Book(String title, String author, String callNumber) {
+  public Book(String title, String author, String callNumber, int copy) {
     this.title = title;
     this.author = author;
     this.callNumber = callNumber;
+    checkedOut = new TreeMap<>();
+    this.copy = copy;
+    this.key = callNumber + Integer.toString(copy);
   }
 
-  /**
-  * Gets the title of the book.
-  *
-  * @return the title of the book
-  */
   public String getTitle() {
     return title;
   }
 
-  /**
-  * Gets the author of the book.
-  *
-  * @return the author of the book
-  */
   public String getAuthor() {
     return author;
   }
 
-  /**
-  * Gets the call number of the book.
-  *
-  * @return the call number of the book
-  */
   public String getCallNumber() {
     return callNumber;
   }
 
-  /**
-  * Checks whether the book is currently checked out.
-  *
-  * @return true if the book is checked out, false otherwise
-  */
+  public int getCopy(){
+    return copy;
+  }
+
+  public String getKey(){
+    return key;
+  }
+
   public boolean isCheckedOut(){
-    if (checkedOut == null) {
+    if (checkedOut.isEmpty()) {
       return false;
     }
       return true;
   }
 
-  /**
-  * Adds a CheckedOut record in this book object.
-  *
-  * @param callNumber The call number of this book
-  * @param newCheckedOut The CheckedOut record to associate
-  * @return true if the record was successfully added
-  */
-  public boolean addCheckedOut(String callNumber, CheckedOut newCheckedOut){
-    checkedOut = newCheckedOut;
+  public boolean isNull(){
+    return title.isEmpty()||title==null||author.isEmpty()||author==null||callNumber.isEmpty()||callNumber==null||copy==0;
+  }
+
+  public boolean addCheckedOut(String borrowerEmail, CheckedOut newCheckedOut){
+    checkedOut.put(borrowerEmail, newCheckedOut);
     return true;
   }
 
-  /**
-  * Gets the CheckedOut record associated with this book.
-  *
-  * @return the CheckedOut record, or null if the book is not checked out
-  */
   public CheckedOut getCheckedOut(){
-    return checkedOut;
+    for(CheckedOut result : checkedOut.values()){
+      if(result.getBook()==this){
+        return result;
+      }
+    }
+    return null;
   }
 
-  /**
-  * Removes the CheckedOut record from this book, marking it available again.
-  *
-  * @param callNumber The call number of this book
-  * @return true if the record was successfully removed
-  */
-  public boolean removeCheckedOut(String callNumber){
-    checkedOut = null;
+  public boolean removeCheckedOut(String borrowerEmail){
+    checkedOut.remove(borrowerEmail);
     return true;
   }
 }
