@@ -267,8 +267,8 @@ public class LibraryDatabase implements java.io.Serializable {
     Borrower borrower = borrowers.get(email);
     if (book==null || borrower==null) {
       return false;}
-    if (book.isNull() || borrower.isNull()) {
-      return false;}
+    //if (book.isNull() || borrower.isNull()) {
+    //  return false;}
     if (book.isCheckedOut()){
       return false;
     }
