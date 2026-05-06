@@ -61,7 +61,7 @@ public class Book implements java.io.Serializable {
    *
    * @return the copy number of this book
    */
-  public int getCopy(){
+  public int getCopy() {
     return copy;
   }
 
@@ -70,7 +70,7 @@ public class Book implements java.io.Serializable {
    *
    * @return the key of this book
    */
-  public String getKey(){
+  public String getKey() {
     return key;
   }
 
@@ -79,11 +79,11 @@ public class Book implements java.io.Serializable {
    *
    * @return true if the book is checked out, false otherwise
    */
-  public boolean isCheckedOut(){
+  public boolean isCheckedOut() {
     if (checkedOut.isEmpty()) {
       return false;
     }
-      return true;
+    return true;
   }
 
   /**
@@ -91,8 +91,14 @@ public class Book implements java.io.Serializable {
    *
    * @return true if any field is null or empty, false otherwise
    */
-  public boolean isNull(){
-    return title.isEmpty()||title==null||author.isEmpty()||author==null||callNumber.isEmpty()||callNumber==null||copy==0;
+  public boolean isNull() {
+    return title.isEmpty()
+        || title == null
+        || author.isEmpty()
+        || author == null
+        || callNumber.isEmpty()
+        || callNumber == null
+        || copy == 0;
   }
 
   /**
@@ -102,7 +108,7 @@ public class Book implements java.io.Serializable {
    * @param newCheckedOut The CheckedOut record to associate with this book
    * @return true if the record was successfully added
    */
-  public boolean addCheckedOut(String borrowerEmail, CheckedOut newCheckedOut){
+  public boolean addCheckedOut(String borrowerEmail, CheckedOut newCheckedOut) {
     checkedOut.put(borrowerEmail, newCheckedOut);
     return true;
   }
@@ -112,9 +118,9 @@ public class Book implements java.io.Serializable {
    *
    * @return the CheckedOut record for this book, or null if the book is not checked out
    */
-  public CheckedOut getCheckedOut(){
-    for(CheckedOut result : checkedOut.values()){
-      if(result.getBook()==this){
+  public CheckedOut getCheckedOut() {
+    for (CheckedOut result : checkedOut.values()) {
+      if (result.getBook() == this) {
         return result;
       }
     }
@@ -127,7 +133,7 @@ public class Book implements java.io.Serializable {
    * @param borrowerEmail The email of the borrower returning this book
    * @return true if the record was successfully removed
    */
-  public boolean removeCheckedOut(String borrowerEmail){
+  public boolean removeCheckedOut(String borrowerEmail) {
     checkedOut.remove(borrowerEmail);
     return true;
   }

@@ -11,8 +11,8 @@ public class CheckedOut {
   private boolean renewed;
 
   /**
-   * Creates a CheckedOut record associating a book with a borrower.
-   * The due date is automatically set to 28 days from the current date.
+   * Creates a CheckedOut record associating a book with a borrower. The due date is automatically
+   * set to 28 days from the current date.
    *
    * @param book The book being checked out
    * @param borrower The borrower checking out the book
@@ -62,8 +62,7 @@ public class CheckedOut {
   }
 
   /**
-   * Renews the due date of this checkout by 28 days.
-   * A loan can only be renewed once.
+   * Renews the due date of this checkout by 28 days. A loan can only be renewed once.
    *
    * @return true if the renewal was successful, false if the loan has already been renewed
    */
@@ -76,5 +75,4 @@ public class CheckedOut {
 
     return true;
   }
-
 }
