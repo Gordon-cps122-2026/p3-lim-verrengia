@@ -1,5 +1,7 @@
 package library.model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.*;
 
 public class Borrower implements java.io.Serializable {
@@ -26,6 +28,14 @@ public class Borrower implements java.io.Serializable {
     this.email = email;
     this.phone = phone;
     this.checkedOut = new TreeMap<>();
+  }
+
+  /** Older serialized databases may omit {@code checkedOut}; restore it after load. */
+  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    if (checkedOut == null) {
+      checkedOut = new TreeMap<>();
+    }
   }
 
   /**
@@ -103,10 +113,7 @@ public class Borrower implements java.io.Serializable {
    * @return true if the borrower has at least one book checked out, false otherwise
    */
   public boolean hasCheckedOut() {
-    if (checkedOut.isEmpty()) {
-      return false;
-    }
-    return true;
+    return checkedOut != null && !checkedOut.isEmpty();
   }
 
   public boolean isNull() {

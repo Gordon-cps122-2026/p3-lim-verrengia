@@ -345,62 +345,23 @@ public class LibraryDatabase implements java.io.Serializable {
   }
 
   /**
-   * Returns information about a book, including its checkout status. If the book is checked out,
-   * the borrower's name and due date are also included.
+   * Looks up a book by its key in the library map.
    *
-   * @param callNumber The call number of the book to search for
-   * @return a string containing the book's title, author, call number, and availability status
+   * @param key the key used to store the book (same key as for {@link #checkout(String, String)},
+   *     {@link #renew(String)}, etc.)
+   * @return the {@link Book}, or {@code null} if there is no book for that key
    */
-  public String searchBook(String key) {
-    Book book = books.get(key);
-    StringBuilder result = new StringBuilder();
-
-    result.append("Title: " + book.getTitle() + "\n");
-    result.append("Author: " + book.getAuthor() + "\n");
-    result.append("Call Number: " + book.getCallNumber() + "\n");
-
-    if (book.isCheckedOut()) {
-      CheckedOut checkedOut = book.getCheckedOut();
-      Borrower borrower = checkedOut.getBorrower();
-
-      result.append("Status: unavailable\n");
-      result.append("Borrower: " + borrower.getFirstName() + " " + borrower.getLastName() + "\n");
-      result.append("Due Date: " + checkedOut.getDueDate() + "\n");
-    } else {
-      result.append("Status: available");
-    }
-
-    return result.toString();
+  public Book searchBook(String key) {
+    return books.get(key);
   }
 
   /**
-   * Returns information about a borrower and all books currently checked out by a borrower.
+   * Looks up a borrower by email (the key in the borrowers map).
    *
-   * @param email The email of the borrower to search for
-   * @return a string listing all checked out books, or a message if none are checked out
+   * @param email the borrower's email address
+   * @return the {@link Borrower}, or {@code null} if there is no borrower with that email
    */
-  public String searchBorrower(String email) {
-    Borrower borrower = borrowers.get(email);
-    StringBuilder result = new StringBuilder();
-
-    result.append("Name: " + borrower.getFirstName() + " " + borrower.getLastName() + "\n");
-    result.append("Email: " + borrower.getEmail() + "\n");
-    result.append("Phone: " + borrower.getPhone() + "\n\n");
-
-    if (borrower.hasCheckedOut()) {
-      result.append("Books checked out:\n");
-      for (Book book : borrower.getAllBooks()) {
-        result.append(
-            book.getAuthor()
-                + ", "
-                + book.getTitle()
-                + ". Due: "
-                + borrower.getCheckedOut(book.getCallNumber()).getDueDate()
-                + "\n");
-      }
-    } else {
-      result.append("No books has been checked out by this borrower.");
-    }
-    return result.toString();
+  public Borrower searchBorrower(String email) {
+    return borrowers.get(email);
   }
 }

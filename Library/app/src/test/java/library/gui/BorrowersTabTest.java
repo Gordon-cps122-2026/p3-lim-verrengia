@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.lang.reflect.Field;
 import javax.swing.*;
 import library.model.LibraryDatabase;
@@ -56,15 +57,32 @@ public class BorrowersTabTest {
           if (c instanceof JLabel && "New Borrower".equals(((JLabel) c).getText())) {
             hasNewBorrowerCard = true;
           }
-          if (c instanceof JLabel && "Borrowers".equals(((JLabel) c).getText())) {
-            hasBorrowersCard = true;
-          }
+        }
+        // Borrowers list card no longer has a page title label; identify by search placeholder.
+        if (containsTextFieldPlaceholder(card, "Search borrower by email")) {
+          hasBorrowersCard = true;
         }
       }
     }
 
     assertTrue(hasNewBorrowerCard, "Should have a 'New Borrower' card");
-    assertTrue(hasBorrowersCard, "Should have a 'Borrowers' card");
+    assertTrue(hasBorrowersCard, "Should have a borrowers list card");
+  }
+
+  private static boolean containsTextFieldPlaceholder(Container root, String placeholder) {
+    for (Component c : root.getComponents()) {
+      if (c instanceof JTextField) {
+        Object ph = ((JTextField) c).getClientProperty("JTextField.placeholderText");
+        if (placeholder.equals(ph)) {
+          return true;
+        }
+      } else if (c instanceof Container) {
+        if (containsTextFieldPlaceholder((Container) c, placeholder)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   @Test
