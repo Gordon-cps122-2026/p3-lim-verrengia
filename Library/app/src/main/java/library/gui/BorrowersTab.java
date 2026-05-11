@@ -13,7 +13,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.MouseAdapter;
@@ -23,7 +22,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -36,6 +34,7 @@ import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
@@ -69,9 +68,10 @@ public class BorrowersTab {
   private final JPanel borrowerRowsPanel = new JPanel();
   private final JTextField searchBorrowerField = LibraryUiTheme.styledSearchField();
   private final InlineFeedback feedback = new InlineFeedback();
-  private String expandedEmail = null;
+  private Runnable refreshBooksAfterCirculation = () -> {};
 
   private static final DateTimeFormatter DUE_SHORT = DateTimeFormatter.ofPattern("MM/dd");
+  private static final double BORROWER_HEADER_REF_WIDTH = 960.0;
 
   public BorrowersTab(LibraryDatabase db) {
     this.db = db;
@@ -143,7 +143,42 @@ public class BorrowersTab {
     JScrollPane sp = new JScrollPane(borrowerRowsPanel);
     sp.setBorder(BorderFactory.createLineBorder(LibraryUiTheme.BORDER_LIGHT, 1));
     sp.getViewport().setBackground(LibraryUiTheme.BG_WHITE);
-    body.add(sp, BorderLayout.CENTER);
+
+    JPanel listWrap = new JPanel(new BorderLayout());
+    listWrap.setOpaque(false);
+    JLabel nameHeader = new JLabel("Name");
+    JLabel emailHeader = new JLabel("Email");
+    JLabel phoneHeader = new JLabel("Phone");
+    JPanel headerPanel =
+        new JPanel(null) {
+          @Override
+          public Dimension getPreferredSize() {
+            return new Dimension(0, 36);
+          }
+
+          @Override
+          public void doLayout() {
+            int pw = getWidth() > 0 ? getWidth() : 760;
+            double s = pw / BORROWER_HEADER_REF_WIDTH;
+            nameHeader.setBounds((int) (36 * s), 8, Math.max((int) (240 * s), 40), 20);
+            emailHeader.setBounds((int) (300 * s), 8, Math.max((int) (280 * s), 60), 20);
+            phoneHeader.setBounds((int) (600 * s), 8, Math.max((int) (160 * s), 40), 20);
+          }
+        };
+    headerPanel.setBackground(new Color(0xF7F7F7));
+    headerPanel.setBorder(
+        BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xE0E0E0)));
+    nameHeader.setFont(LibraryUiTheme.uiFont(Font.BOLD, 13));
+    emailHeader.setFont(LibraryUiTheme.uiFont(Font.BOLD, 13));
+    phoneHeader.setFont(LibraryUiTheme.uiFont(Font.BOLD, 13));
+    phoneHeader.setHorizontalAlignment(SwingConstants.RIGHT);
+    headerPanel.add(nameHeader);
+    headerPanel.add(emailHeader);
+    headerPanel.add(phoneHeader);
+    listWrap.add(headerPanel, BorderLayout.NORTH);
+    listWrap.add(sp, BorderLayout.CENTER);
+
+    body.add(listWrap, BorderLayout.CENTER);
     tab.add(body, BorderLayout.CENTER);
 
     JPanel south = new JPanel();
@@ -151,7 +186,7 @@ public class BorrowersTab {
     south.setOpaque(false);
 
     JButton ghostAdd = new JButton("Add Borrower");
-    ghostAdd.addActionListener(e -> showCard("newBorrower"));
+    ghostAdd.addActionListener(e -> openAddBorrowerDialog());
     ghostAdd.setVisible(false);
     ghostAdd.setMaximumSize(new Dimension(0, 0));
     ghostAdd.setPreferredSize(new Dimension(0, 0));
@@ -166,7 +201,7 @@ public class BorrowersTab {
     RoundedJButton renew = new RoundedJButton("Renew", false);
     renew.addActionListener(e -> openRenewDialog());
     RoundedJButton addUi = new RoundedJButton("Add borrower", false);
-    addUi.addActionListener(e -> showCard("newBorrower"));
+    addUi.addActionListener(e -> openAddBorrowerDialog());
     row.add(checkout);
     row.add(ret);
     row.add(renew);
@@ -228,26 +263,16 @@ public class BorrowersTab {
     }
   }
 
-  private void syncBorrowerRowExpansionUi() {
-    for (Component c : borrowerRowsPanel.getComponents()) {
-      if (c instanceof BorrowerRowHost h) {
-        h.applySharedExpansionState();
-      }
-    }
-    borrowerRowsPanel.revalidate();
-    borrowerRowsPanel.repaint();
-  }
-
   private final class BorrowerRowHost extends JPanel {
     private static final int ROW_H = 52;
 
     private final Borrower borrower;
-    /** Fixed 52px-high row: GridLayout 1×3 with left=name+chevron, center=email, right=phone. */
     private final JPanel header;
-
     private final JPanel expand;
-    /** Chevron ▼ / ▲; only its text updates when expanded — header structure is unchanged. */
     private final JLabel chevronLabel = new JLabel("\u25BC");
+    private final JLabel nameLabel;
+    private final JLabel emailLabel;
+    private final JLabel phoneLabel;
 
     BorrowerRowHost(Borrower borrower) {
       super();
@@ -261,35 +286,28 @@ public class BorrowersTab {
       String ln = borrower.getLastName() != null ? borrower.getLastName() : "";
       String displayName = (fn + " " + ln).trim();
 
-      JPanel leftCol = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-      JPanel centerCol = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-      JPanel rightCol = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-      leftCol.setOpaque(false);
-      centerCol.setOpaque(false);
-      rightCol.setOpaque(false);
-
       chevronLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 12));
       chevronLabel.setForeground(LibraryUiTheme.TEXT_MUTED);
-      JLabel nameLabel = new JLabel(displayName.isEmpty() ? "\u2014" : displayName);
+      nameLabel = new JLabel(displayName.isEmpty() ? "\u2014" : displayName);
       nameLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
-      JLabel emailLabel =
-          new JLabel(borrower.getEmail() != null ? borrower.getEmail() : "");
-      emailLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
-      JLabel phoneLabel =
-          new JLabel(borrower.getPhone() != null ? borrower.getPhone() : "");
-      phoneLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
 
-      leftCol.add(chevronLabel);
-      leftCol.add(nameLabel);
-      centerCol.add(emailLabel);
-      rightCol.add(phoneLabel);
+      emailLabel = new JLabel(borrower.getEmail() != null ? borrower.getEmail() : "");
+      emailLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
+      emailLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+      phoneLabel = new JLabel(borrower.getPhone() != null ? borrower.getPhone() : "");
+      phoneLabel.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
+      phoneLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
       JPanel headerRow =
-          new JPanel(new GridLayout(1, 3, 0, 0)) {
+          new JPanel(null) {
+            /**
+             * Fixed height only — never read {@code getParent().getWidth()} here; that can trigger
+             * layout/size recursion during initial validation and stall or freeze the EDT.
+             */
             @Override
             public Dimension getPreferredSize() {
-              Dimension d = super.getPreferredSize();
-              return new Dimension(d.width, ROW_H);
+              return new Dimension(0, ROW_H);
             }
 
             @Override
@@ -299,16 +317,34 @@ public class BorrowersTab {
 
             @Override
             public Dimension getMinimumSize() {
-              return new Dimension(1, ROW_H);
+              return new Dimension(120, ROW_H);
+            }
+
+            @Override
+            public void doLayout() {
+              int pw = getWidth();
+              if (pw <= 0) {
+                pw = 760;
+              }
+              double s = pw / BORROWER_HEADER_REF_WIDTH;
+              int labH = 20;
+              int y = Math.max((ROW_H - labH) / 2, 0);
+              int chevW = Math.max((int) Math.round(20 * s), 16);
+              chevronLabel.setBounds((int) (12 * s), y, chevW, labH);
+              nameLabel.setBounds((int) (36 * s), y, Math.max((int) (240 * s), 40), labH);
+              emailLabel.setBounds((int) (300 * s), y, Math.max((int) (280 * s), 60), labH);
+              phoneLabel.setBounds((int) (600 * s), y, Math.max((int) (160 * s), 40), labH);
             }
           };
       headerRow.setOpaque(true);
       headerRow.setBackground(LibraryUiTheme.BG_WHITE);
+      headerRow.setPreferredSize(new Dimension(0, ROW_H));
+      headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, ROW_H));
       headerRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-      // Height fixed at 52; width follows parent (avoid getWidth()==0 during construction).
-      headerRow.add(leftCol); // FIRST — column 1
-      headerRow.add(centerCol); // SECOND — column 2
-      headerRow.add(rightCol); // THIRD — column 3
+      headerRow.add(chevronLabel);
+      headerRow.add(nameLabel);
+      headerRow.add(emailLabel);
+      headerRow.add(phoneLabel);
 
       header = headerRow;
 
@@ -323,8 +359,10 @@ public class BorrowersTab {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-              if (!Objects.equals(borrower.getEmail(), expandedEmail)) {
+              if (!expand.isVisible()) {
                 setHeaderRowBackground(LibraryUiTheme.ROW_HOVER);
+              } else {
+                setHeaderRowBackground(LibraryUiTheme.EXPAND_ROW);
               }
             }
 
@@ -351,14 +389,8 @@ public class BorrowersTab {
 
       add(header);
       add(expand);
-      expand.setVisible(Objects.equals(borrower.getEmail(), expandedEmail));
-      updateChevron();
-      updateHeaderBg();
-    }
-
-    private void applySharedExpansionState() {
-      expand.setVisible(Objects.equals(borrower.getEmail(), expandedEmail));
-      updateChevron();
+      expand.setVisible(false);
+      chevronLabel.setText("\u25BC");
       updateHeaderBg();
     }
 
@@ -375,17 +407,11 @@ public class BorrowersTab {
     }
 
     private void toggleExpand() {
-      if (Objects.equals(borrower.getEmail(), expandedEmail)) {
-        expandedEmail = null;
-      } else {
-        expandedEmail = borrower.getEmail();
-      }
-      BorrowersTab.this.syncBorrowerRowExpansionUi();
-    }
-
-    private void updateChevron() {
-      boolean on = Objects.equals(borrower.getEmail(), expandedEmail);
-      chevronLabel.setText(on ? "\u25B2" : "\u25BC");
+      expand.setVisible(!expand.isVisible());
+      chevronLabel.setText(expand.isVisible() ? "\u25B2" : "\u25BC");
+      BorrowerRowHost.this.revalidate();
+      BorrowerRowHost.this.repaint();
+      updateHeaderBg();
     }
 
     private void setHeaderRowBackground(Color c) {
@@ -394,8 +420,7 @@ public class BorrowersTab {
     }
 
     private void updateHeaderBg() {
-      boolean expanded = Objects.equals(borrower.getEmail(), expandedEmail);
-      Color c = expanded ? LibraryUiTheme.EXPAND_ROW : LibraryUiTheme.BG_WHITE;
+      Color c = expand.isVisible() ? LibraryUiTheme.EXPAND_ROW : LibraryUiTheme.BG_WHITE;
       setHeaderRowBackground(c);
     }
 
@@ -404,6 +429,12 @@ public class BorrowersTab {
       wrap.setOpaque(true);
       wrap.setBackground(LibraryUiTheme.BORROWER_EXPAND_PANEL_BG);
       wrap.setBorder(new EmptyBorder(8, 28, 12, 12));
+      fillBorrowedBooksIntoExpand(wrap);
+      return wrap;
+    }
+
+    private void fillBorrowedBooksIntoExpand(JPanel wrap) {
+      wrap.removeAll();
       Collection<Book> books = borrower.getAllBooks();
       int n = books.size();
       JLabel title = new JLabel(n + " borrowed book(s)");
@@ -433,7 +464,12 @@ public class BorrowersTab {
         lines.add(line);
       }
       wrap.add(lines, BorderLayout.CENTER);
-      return wrap;
+    }
+
+    private void repopulateExpandPanelContents() {
+      fillBorrowedBooksIntoExpand(expand);
+      expand.revalidate();
+      expand.repaint();
     }
   }
 
@@ -478,8 +514,6 @@ public class BorrowersTab {
 
     JPanel bottom = new JPanel(new BorderLayout());
     bottom.setOpaque(false);
-    RoundedJButton back = new RoundedJButton("Back to Borrowers", false);
-    back.addActionListener(e -> showCard("borrowers"));
 
     addBorrowerButton = new RoundedJButton("Add Borrower", true);
     addBorrowerButton.addActionListener(
@@ -504,7 +538,6 @@ public class BorrowersTab {
           }
         });
 
-    bottom.add(back, BorderLayout.WEST);
     bottom.add(addBorrowerButton, BorderLayout.EAST);
     card.add(bottom, BorderLayout.SOUTH);
 
@@ -565,11 +598,109 @@ public class BorrowersTab {
     rebuildBorrowerRowsUi();
   }
 
+  /**
+   * Updates backing CSV and borrowed-books expand bodies only — does not rebuild filters or remove
+   * rows (avoids losing borrowers after circulation).
+   */
+  public void refreshBorrowersAfterCirculation() {
+    borrowerListArea.setText(db.getBorrowerCsv());
+    repopulateBorrowerExpandPanelsOnly();
+  }
+
+  public void setRefreshBooksAfterCirculation(Runnable r) {
+    refreshBooksAfterCirculation = r != null ? r : () -> {};
+  }
+
+  private void repopulateBorrowerExpandPanelsOnly() {
+    for (Component c : borrowerRowsPanel.getComponents()) {
+      if (c instanceof BorrowerRowHost h) {
+        h.repopulateExpandPanelContents();
+      }
+    }
+    borrowerRowsPanel.revalidate();
+    borrowerRowsPanel.repaint();
+  }
+
   private void clearAddBorrowerFields() {
     firstNameText.setText("");
     lastNameText.setText("");
     emailText.setText("");
     phoneText.setText("");
+  }
+
+  private void openAddBorrowerDialog() {
+    feedback.clearNow();
+    if (GraphicsEnvironment.isHeadless()) {
+      // Tests run headless; avoid blocking on modal dialog.
+      showCard("newBorrower");
+      return;
+    }
+    Window w = SwingUtilities.getWindowAncestor(panel);
+    JDialog d = new JDialog(w, "Add Borrower", java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+    d.setModal(true);
+    JPanel root = booksTabStyleShell(d, "Add Borrower");
+
+    JTextField firstF = LibraryUiTheme.styledTextField();
+    JTextField lastF = LibraryUiTheme.styledTextField();
+    JTextField emailF = LibraryUiTheme.styledTextField();
+    JTextField phoneF = LibraryUiTheme.styledTextField();
+    JLabel err = new JLabel(" ");
+    err.setForeground(LibraryUiTheme.ERROR);
+    err.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 13));
+
+    JPanel form = new JPanel(new GridBagLayout());
+    form.setOpaque(false);
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.gridx = 0;
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.weightx = 1;
+    gbc.insets = new Insets(0, 0, 16, 0);
+    gbc.gridy = 0;
+    form.add(labeled("First Name", firstF), gbc);
+    gbc.gridy = 1;
+    form.add(labeled("Last Name", lastF), gbc);
+    gbc.gridy = 2;
+    form.add(labeled("Email", emailF), gbc);
+    gbc.gridy = 3;
+    form.add(labeled("Phone", phoneF), gbc);
+
+    JPanel mid = new JPanel(new BorderLayout(0, 8));
+    mid.setOpaque(false);
+    mid.add(form, BorderLayout.NORTH);
+    mid.add(err, BorderLayout.CENTER);
+    root.add(mid, BorderLayout.CENTER);
+
+    JPanel foot = new JPanel(new BorderLayout());
+    foot.setOpaque(false);
+    foot.setBorder(new EmptyBorder(0, 0, 20, 0));
+    foot.add(cancelLink(d), BorderLayout.WEST);
+    RoundedJButton add = new RoundedJButton("Add Borrower", true);
+    add.addActionListener(
+        ev -> {
+          err.setText(" ");
+          if (db.addBorrower(
+              firstF.getText().trim(),
+              lastF.getText().trim(),
+              emailF.getText().trim(),
+              phoneF.getText().trim())) {
+            if (!persistDatabaseQuiet()) {
+              return;
+            }
+            refreshBorrowerList();
+            d.dispose();
+          } else {
+            err.setText("Borrower already exists or fields are empty.");
+          }
+        });
+    JPanel east = new JPanel();
+    east.setOpaque(false);
+    east.add(add);
+    foot.add(east, BorderLayout.EAST);
+    root.add(foot, BorderLayout.SOUTH);
+
+    d.setSize(480, 400);
+    d.setLocationRelativeTo(w);
+    d.setVisible(true);
   }
 
   private boolean persistDatabaseQuiet() {
@@ -613,9 +744,10 @@ public class BorrowersTab {
               CirculationHelper.tryCheckout(db, emailF.getText().trim(), callF.getText().trim());
           if ("ok".equals(msg)) {
             persistOrBail();
-            feedback.showMessage("Checkout successful \u2713", LibraryUiTheme.SUCCESS);
-            refreshBorrowerList();
             d.dispose();
+            feedback.showMessage("Checkout successful \u2713", LibraryUiTheme.SUCCESS);
+            refreshBooksAfterCirculation.run();
+            refreshBorrowersAfterCirculation();
           } else {
             err.setText(msg);
           }
@@ -625,7 +757,7 @@ public class BorrowersTab {
     east.add(go);
     foot.add(east, BorderLayout.EAST);
     root.add(foot, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 360);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }
@@ -656,9 +788,10 @@ public class BorrowersTab {
               CirculationHelper.tryReturn(db, emailF.getText().trim(), callF.getText().trim());
           if (ok) {
             persistOrBail();
-            feedback.showMessage("Return successful \u2713", LibraryUiTheme.SUCCESS);
-            refreshBorrowerList();
             d.dispose();
+            feedback.showMessage("Return successful \u2713", LibraryUiTheme.SUCCESS);
+            refreshBooksAfterCirculation.run();
+            refreshBorrowersAfterCirculation();
           } else {
             err.setText("Book is not currently checked out.");
           }
@@ -668,7 +801,7 @@ public class BorrowersTab {
     east.add(go);
     foot.add(east, BorderLayout.EAST);
     root.add(foot, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 360);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }
@@ -717,9 +850,10 @@ public class BorrowersTab {
             }
             if (db.renew(k)) {
               persistOrBail();
-              feedback.showMessage("Renew successful", LibraryUiTheme.SUCCESS);
-              refreshBorrowerList();
               d.dispose();
+              feedback.showMessage("Renew successful", LibraryUiTheme.SUCCESS);
+              refreshBooksAfterCirculation.run();
+              refreshBorrowersAfterCirculation();
               return;
             }
             err.setText("Failed to renew.");
@@ -732,7 +866,7 @@ public class BorrowersTab {
     east.add(go);
     foot.add(east, BorderLayout.EAST);
     root.add(foot, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 360);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }

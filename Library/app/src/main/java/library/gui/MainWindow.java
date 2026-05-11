@@ -3,6 +3,7 @@ package library.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -34,8 +35,10 @@ public class MainWindow {
   private final BorrowersTab borrowersTab;
 
   public MainWindow(LibraryDatabase db) {
-    booksTab = new BooksTab(db);
     borrowersTab = new BorrowersTab(db);
+    booksTab = new BooksTab(db);
+    booksTab.setAfterCirculationSuccess(borrowersTab::refreshBorrowersAfterCirculation);
+    borrowersTab.setRefreshBooksAfterCirculation(booksTab::refreshBookList);
 
     frame = new JFrame("Library App");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -62,8 +65,8 @@ public class MainWindow {
     Runnable syncStrip =
         () -> {
           int sel = tabbedPane.getSelectedIndex();
-          styleMockupTab(tabBooks, sel == 0);
-          styleMockupTab(tabBorrowers, sel == 1);
+          styleTab(tabBooks, sel == 0);
+          styleTab(tabBorrowers, sel == 1);
         };
 
     tabBooks.addMouseListener(
@@ -96,18 +99,26 @@ public class MainWindow {
 
     syncStrip.run();
 
-    frame.pack();
-    frame.setMinimumSize(frame.getSize());
+    int width = 960;
+    int height = 720;
+    frame.setSize(width, height);
+    frame.setMinimumSize(new Dimension(width, height));
     frame.setLocationRelativeTo(null);
   }
 
-  private static void styleMockupTab(JLabel label, boolean active) {
-    label.setFont(LibraryUiTheme.uiFont(active ? Font.BOLD : Font.PLAIN, 15));
-    label.setForeground(active ? Color.BLACK : LibraryUiTheme.TEXT_MUTED);
+  private static final Font TAB_FONT = new Font("SansSerif", Font.PLAIN, 14);
+  private static final Color TAB_ACTIVE_COLOR = new Color(0x1A1A1A);
+  private static final Color TAB_INACTIVE_COLOR = new Color(0x999999);
+
+  private static void styleTab(JLabel label, boolean isActive) {
+    label.setFont(
+        isActive ? TAB_FONT.deriveFont(Font.BOLD) : TAB_FONT.deriveFont(Font.PLAIN));
+    label.setForeground(isActive ? TAB_ACTIVE_COLOR : TAB_INACTIVE_COLOR);
     label.setBorder(
         BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(
-                0, 0, active ? 2 : 0, 0, active ? Color.BLACK : new Color(0, 0, 0, 0)),
+            isActive
+                ? BorderFactory.createMatteBorder(0, 0, 2, 0, TAB_ACTIVE_COLOR)
+                : BorderFactory.createEmptyBorder(0, 0, 2, 0),
             new EmptyBorder(10, 0, 10, 0)));
   }
 

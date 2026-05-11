@@ -36,6 +36,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
 
 import library.model.Book;
 import library.model.Borrower;
@@ -63,18 +64,26 @@ public class BooksTab extends JPanel {
   private final JTextField searchField = LibraryUiTheme.styledSearchField();
   private final InlineFeedback feedback = new InlineFeedback();
   private int hoverRow = -1;
+  /** After checkout/return from Books tab UI, refresh Borrowers UI without full rebuild. */
+  private Runnable afterCirculationSuccess = () -> {};
 
-  private static final String[] COLS = {"Title", "Author", "Call number", "Status", "Borrower"};
+  private static final String[] COLS =
+      {"Title", "Author", "Call number", "Copies", "Status", "Borrower"};
+  private static final int COL_COPIES = 3;
+  private static final int COL_STATUS = 4;
+  private static final int COL_BORROWER = 5;
   private static final DateTimeFormatter DUE_FMT =
       DateTimeFormatter.ofPattern("MMM dd", Locale.ENGLISH);
 
   static final class BookRow {
     final String mapKey;
     final Book book;
+    final int copiesCount;
 
-    BookRow(String mapKey, Book book) {
+    BookRow(String mapKey, Book book, int copiesCount) {
       this.mapKey = mapKey;
       this.book = book;
+      this.copiesCount = copiesCount;
     }
   }
 
@@ -118,8 +127,10 @@ public class BooksTab extends JPanel {
         case 2:
           return b.getCallNumber();
         case 3:
-          return b.isCheckedOut() ? "Unavailable" : "Available";
+          return r.copiesCount;
         case 4:
+          return b.isCheckedOut() ? "Unavailable" : "Available";
+        case 5:
           if (!b.isCheckedOut()) {
             return "";
           }
@@ -154,6 +165,33 @@ public class BooksTab extends JPanel {
           (JLabel)
               super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
       c.setHorizontalAlignment(SwingConstants.LEFT);
+      c.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 13));
+      c.setForeground(Color.BLACK);
+      c.setBackground(LibraryUiTheme.TABLE_HEADER_BG);
+      c.setOpaque(true);
+      c.setBorder(
+          BorderFactory.createCompoundBorder(
+              BorderFactory.createMatteBorder(0, 0, 1, 0, LibraryUiTheme.BORDER_LIGHT),
+              new EmptyBorder(8, 10, 8, 10)));
+      return c;
+    }
+  }
+
+  /** Status column header — centered to match badges. */
+  private static final class FlatCenterTableHeaderRenderer extends DefaultTableCellRenderer {
+    FlatCenterTableHeaderRenderer() {
+      setHorizontalAlignment(SwingConstants.CENTER);
+      setVerticalAlignment(SwingConstants.CENTER);
+    }
+
+    @Override
+    public Component getTableCellRendererComponent(
+        JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+      JLabel c =
+          (JLabel)
+              super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+      c.setHorizontalAlignment(SwingConstants.CENTER);
+      c.setVerticalAlignment(SwingConstants.CENTER);
       c.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 13));
       c.setForeground(Color.BLACK);
       c.setBackground(LibraryUiTheme.TABLE_HEADER_BG);
@@ -249,6 +287,23 @@ public class BooksTab extends JPanel {
     tableHeader.setForeground(Color.BLACK);
     tableHeader.setOpaque(true);
     tableHeader.setDefaultRenderer(new FlatLeftTableHeaderRenderer());
+
+    DefaultTableCellRenderer copiesCellRenderer = new DefaultTableCellRenderer();
+    copiesCellRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+    copiesCellRenderer.setVerticalAlignment(SwingConstants.CENTER);
+    copiesCellRenderer.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
+    TableColumn copiesCol = bookTable.getColumnModel().getColumn(COL_COPIES);
+    copiesCol.setCellRenderer(copiesCellRenderer);
+    copiesCol.setHeaderRenderer(new FlatCenterTableHeaderRenderer());
+    copiesCol.setMinWidth(70);
+    copiesCol.setMaxWidth(70);
+    copiesCol.setPreferredWidth(70);
+
+    TableColumn statusCol = bookTable.getColumnModel().getColumn(COL_STATUS);
+    statusCol.setHeaderRenderer(new FlatCenterTableHeaderRenderer());
+    statusCol.setMinWidth(120);
+    statusCol.setMaxWidth(120);
+    statusCol.setPreferredWidth(120);
     bookTable.addMouseMotionListener(
         new MouseAdapter() {
           @Override
@@ -319,14 +374,14 @@ public class BooksTab extends JPanel {
           (JLabel)
               super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
       base.setFont(LibraryUiTheme.uiFont(Font.PLAIN, 14));
-      if (column == 4) {
+      if (column == COL_BORROWER) {
         base.setText(value == null ? "" : value.toString());
       }
       Color bg =
           isSelected
               ? table.getSelectionBackground()
               : (row == hoverRow ? LibraryUiTheme.ROW_HOVER : LibraryUiTheme.BG_WHITE);
-      if (column == 3 && value != null) {
+      if (column == COL_STATUS && value != null) {
         JPanel wrap = new JPanel(new GridBagLayout());
         wrap.setBackground(bg);
         wrap.setOpaque(true);
@@ -343,8 +398,14 @@ public class BooksTab extends JPanel {
       base.setBackground(bg);
       base.setOpaque(true);
       base.setVerticalAlignment(SwingConstants.CENTER);
+      base.setHorizontalAlignment(SwingConstants.LEFT);
       return base;
     }
+  }
+
+  /** Called from MainWindow — keeps books + borrowers panels in sync after circulation. */
+  public void setAfterCirculationSuccess(Runnable r) {
+    afterCirculationSuccess = r != null ? r : () -> {};
   }
 
   private void applySearchFilter() {
@@ -363,7 +424,8 @@ public class BooksTab extends JPanel {
   private void rebuildAllRows() {
     allRows.clear();
     for (Map.Entry<String, Book> e : DatabaseView.bookEntries(db)) {
-      allRows.add(new BookRow(e.getKey(), e.getValue()));
+      Book b = e.getValue();
+      allRows.add(new BookRow(e.getKey(), b, db.countCopies(b.getCallNumber())));
     }
     applySearchFilter();
   }
@@ -400,6 +462,7 @@ public class BooksTab extends JPanel {
 
     JPanel footer = new JPanel(new BorderLayout());
     footer.setOpaque(false);
+    footer.setBorder(new EmptyBorder(0, 0, 20, 0));
     JLabel cancel = dialogCancelLink(d);
     RoundedJButton add = new RoundedJButton("Add", true);
     add.addActionListener(
@@ -430,7 +493,7 @@ public class BooksTab extends JPanel {
     footer.add(cancel, BorderLayout.WEST);
     footer.add(east, BorderLayout.EAST);
     root.add(footer, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 400);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }
@@ -473,9 +536,10 @@ public class BooksTab extends JPanel {
           String msg = CirculationHelper.tryCheckout(db, email, call);
           if ("ok".equals(msg)) {
             persistOrBail();
+            d.dispose();
             feedback.showMessage("Checkout successful \u2713", LibraryUiTheme.SUCCESS);
             refreshBookList();
-            d.dispose();
+            afterCirculationSuccess.run();
           } else {
             dialogErr.setText(msg);
           }
@@ -486,7 +550,7 @@ public class BooksTab extends JPanel {
     footer.add(cancel, BorderLayout.WEST);
     footer.add(east, BorderLayout.EAST);
     root.add(footer, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 360);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }
@@ -528,9 +592,10 @@ public class BooksTab extends JPanel {
               CirculationHelper.tryReturn(db, emailF.getText().trim(), callF.getText().trim());
           if (ok) {
             persistOrBail();
+            d.dispose();
             feedback.showMessage("Return successful \u2713", LibraryUiTheme.SUCCESS);
             refreshBookList();
-            d.dispose();
+            afterCirculationSuccess.run();
           } else {
             dialogErr.setText("Book is not currently checked out.");
           }
@@ -540,7 +605,7 @@ public class BooksTab extends JPanel {
     east.add(go);
     footer.add(east, BorderLayout.EAST);
     root.add(footer, BorderLayout.SOUTH);
-    d.pack();
+    d.setSize(480, 360);
     d.setLocationRelativeTo(w);
     d.setVisible(true);
   }
@@ -567,6 +632,7 @@ public class BooksTab extends JPanel {
       persistOrBail();
       feedback.showMessage("Renew successful", LibraryUiTheme.SUCCESS);
       refreshBookList();
+      afterCirculationSuccess.run();
     } else {
       feedback.showMessage("Failed to renew.", LibraryUiTheme.ERROR);
     }

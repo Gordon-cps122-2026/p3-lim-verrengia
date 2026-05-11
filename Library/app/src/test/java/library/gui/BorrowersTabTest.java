@@ -185,11 +185,6 @@ public class BorrowersTabTest {
     assertNotNull(addButton);
     addButton.doClick();
 
-    // Simulate clicking the Back to Borrowers button
-    JButton backButton = findButtonByText(newBorrowerCard, "Back to Borrowers");
-    assertNotNull(backButton);
-    backButton.doClick();
-
     // Check that the text area shows the borrower
     assertNotNull(borrowerListArea);
     String displayedText = borrowerListArea.getText();
@@ -218,23 +213,9 @@ public class BorrowersTabTest {
     JButton addButton = findButtonByText(borrowersCard, "Add Borrower");
     assertNotNull(addButton);
 
-    // Simulate button click
+    // UI now opens Add Borrower as modal dialog instead of card navigation,
+    // so current card remains borrowers.
     addButton.doClick();
-
-    // Should switch to newBorrower card
-    assertEquals("newBorrower", currentCardField.get(borrowers));
-
-    // Find the "Back to Borrowers" button on new borrower card
-    Field newBorrowerCardField = BorrowersTab.class.getDeclaredField("newBorrowerCard");
-    newBorrowerCardField.setAccessible(true);
-    JPanel newBorrowerCard = (JPanel) newBorrowerCardField.get(borrowers);
-    JButton backButton = findButtonByText(newBorrowerCard, "Back to Borrowers");
-    assertNotNull(backButton);
-
-    // Simulate button click
-    backButton.doClick();
-
-    // Should switch back to borrowers card
     assertEquals("borrowers", currentCardField.get(borrowers));
   }
 
