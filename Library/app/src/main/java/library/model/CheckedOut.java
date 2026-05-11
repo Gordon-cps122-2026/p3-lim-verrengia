@@ -1,9 +1,12 @@
 package library.model;
 
+import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.*;
 
-public class CheckedOut {
+/** Checkout record persisted inside {@link Book} / {@link Borrower} via Java serialization. */
+public class CheckedOut implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   private Book book;
   private Borrower borrower;

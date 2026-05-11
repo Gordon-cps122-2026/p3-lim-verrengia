@@ -1,5 +1,7 @@
 package library.model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.TreeMap;
 
 public class Book implements java.io.Serializable {
@@ -27,6 +29,14 @@ public class Book implements java.io.Serializable {
     checkedOut = new TreeMap<>();
     this.copy = copy;
     this.key = callNumber + Integer.toString(copy);
+  }
+
+  /** Older serialized databases may omit {@code checkedOut}; restore it after load. */
+  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    if (checkedOut == null) {
+      checkedOut = new TreeMap<>();
+    }
   }
 
   /**
@@ -80,10 +90,7 @@ public class Book implements java.io.Serializable {
    * @return true if the book is checked out, false otherwise
    */
   public boolean isCheckedOut() {
-    if (checkedOut.isEmpty()) {
-      return false;
-    }
-    return true;
+    return checkedOut != null && !checkedOut.isEmpty();
   }
 
   /**
