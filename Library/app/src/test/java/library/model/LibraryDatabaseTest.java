@@ -21,10 +21,7 @@ public class LibraryDatabaseTest {
     db.addBook("Title3", "Author3", "CallNumber3");
 
     // Create copies of books (two copies for CallNumber1)
-    db.addBookCopy("CallNumber1"); // Copy 1
     db.addBookCopy("CallNumber1"); // Copy 2
-    db.addBookCopy("CallNumber2"); // Copy 1
-    db.addBookCopy("CallNumber3"); // Copy 1
 
     callNumbers = new TreeSet<String>();
     callNumbers.add("CallNumber1");

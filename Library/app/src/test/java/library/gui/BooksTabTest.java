@@ -101,7 +101,7 @@ public class BooksTabTest {
 
     // Check that the text area shows the book
     assertNotNull(bookListArea);
-    expectedText = "\"Test Title\",\"Test Author\",\"TEST001\"\n";
+    expectedText = "\"Test Title\",\"Test Author\",\"TEST001\",1\n";
     assertEquals(expectedText, bookListArea.getText());
   }
 

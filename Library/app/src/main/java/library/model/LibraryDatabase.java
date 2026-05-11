@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.time.LocalDate;
 import java.util.*;
 import java.time.LocalDate;
 
@@ -112,11 +111,12 @@ public class LibraryDatabase implements java.io.Serializable {
 
   /**
    * Add a book to the library, without knowing anything about objects in the library.
+   * If a book with the same call number already exists, adds a new copy instead.
    *
    * @param title The book's title
    * @param author The book's author
    * @param callNumber The book's call number
-   * @return true if the book was added, false if a book with the same call number already exists
+   * @return true if the book or copy was added, false if invalid input
    */
   public boolean addBook(String title, String author, String callNumber) {
     if ((title == null || title.isEmpty())
@@ -124,14 +124,45 @@ public class LibraryDatabase implements java.io.Serializable {
         || (callNumber == null || callNumber.isEmpty())) {
       return false;
     }
-    if (books.containsKey(callNumber)) {
-      return false;
+    if (books.containsKey(callNumber + "1")) {
+      // Book exists, add a copy
+      return addBookCopy(callNumber);
     }
 
     Book book = new Book(title, author, callNumber, 1);
-    books.put(callNumber, book);
+    books.put(callNumber + "1", book);
     return true;
   }
+
+  public int countCopies(String callNumber){
+    Collection<String> callNums = new ArrayList<>();
+    for (String i : books.keySet()){
+      if(i.contains(callNumber)){
+        callNums.add(i);
+      }
+    }
+    int copyNum = callNums.size();
+    return copyNum;
+  }
+
+  /**
+   * Add a book to the library where a copy of it already exists.
+   *
+   * @param callNumber The book's call number
+   * @return true if the book was added, false if a book with the same call number does not exist
+   */
+    public boolean addBookCopy(String callNumber){
+    int copyNum = countCopies(callNumber);
+      if(copyNum==0){
+        return false;
+      }
+      else{
+        Book oldBook = books.get(callNumber+"1");
+        Book book = new Book(oldBook.getTitle(),oldBook.getAuthor(),callNumber,copyNum+1);
+        books.put(callNumber+(copyNum+1),book);
+        return true;
+      }
+    }
 
   /**
    * Add a borrower to the library, without knowing anything about objects in the library.
@@ -183,18 +214,30 @@ public class LibraryDatabase implements java.io.Serializable {
    * Return a report of all books in the library, in CSV (comma-separated values) format.
    *
    * @return A string containing one line per book in the library, in the form
-   *     <p>"title","author","callNumber"
+   *     <p>"title","author","callNumber",copyCount
    *     <p>Note that each field is in quotes, and the fields are separated by commas.
    */
   public String getBookCsv() {
-    StringBuilder bookCsv = new StringBuilder();
+    Map<String, Integer> callNumberCounts = new TreeMap<>();
     for (String key : books.keySet()) {
-      String title = books.get(key).getTitle();
-      String author = books.get(key).getAuthor();
-      String callNum = key;
-      bookCsv.append("\"" + title + "\",\"" + author + "\",\"" + callNum + "\"\n");
+      Book book = books.get(key);
+      String callNumber = book.getCallNumber();
+      callNumberCounts.put(callNumber, callNumberCounts.getOrDefault(callNumber, 0) + 1);
     }
-
+    StringBuilder bookCsv = new StringBuilder();
+    for (Map.Entry<String, Integer> entry : callNumberCounts.entrySet()) {
+      String callNumber = entry.getKey();
+      Book book = null;
+      for (String key : books.keySet()) {
+        if (books.get(key).getCallNumber().equals(callNumber)) {
+          book = books.get(key);
+          break;
+        }
+      }
+      if (book != null) {
+        bookCsv.append("\"" + book.getTitle() + "\",\"" + book.getAuthor() + "\",\"" + callNumber + "\"," + entry.getValue() + "\n");
+      }
+    }
     return bookCsv.toString();
   }
 
@@ -227,22 +270,23 @@ public class LibraryDatabase implements java.io.Serializable {
   * Checks out a book to a borrower.
   *
   * @param callNumber The call number of the book to check out
-  * @param copyNum The copy number of the book
   * @param email The email of the borrower checking out the book
   * @return true if the checkout was successful, false if the book or borrower does not exist,
   *     or if the book is already checked out
   */
-  public boolean checkout(String callNumber, int copyNum, String email) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
-    Borrower borrower = borrowers.get(email);
+  public boolean checkout(String key, String email) {
 
-    if (book == null || borrower == null) return false;
-    if (book.isCheckedOut()) return false;
+    Book book = books.get(key);
+    Borrower borrower = borrowers.get(email);
+    if (book==null || borrower==null) {
+      return false;}
+    if (book.isCheckedOut()){
+      return false;
+    }
 
     CheckedOut checkedOut = new CheckedOut(book, borrower);
-    book.addCheckedOut(callNumber, checkedOut);
-    borrower.addCheckedOut(callNumber, checkedOut);
+    book.addCheckedOut(email, checkedOut);
+    borrower.addCheckedOut(key, checkedOut);
 
     return true;
   }
@@ -251,19 +295,28 @@ public class LibraryDatabase implements java.io.Serializable {
   * Renews the due date of a checked out book by 28 days.
   *
   * @param callNumber The call number of the book to renew
-  * @param copyNum The copy number of the book
   * @return true if the renewal was successful, false if the book does not exist,
   *     is not checked out, or has already been renewed
   */
-  public boolean renew(String callNumber, int copyNum) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
-    if (book == null || !book.isCheckedOut()) return false;
+  public boolean renew(String key) {
 
-    CheckedOut checkedOut = book.getCheckedOut();
-    if (checkedOut.isRenewed()) return false;
+    Book book = books.get(key);
 
-    checkedOut.renewDueDate();
+    if (book == null || !book.isCheckedOut()) {
+      return false;
+    }
+    CheckedOut bookCheckedOut = book.getCheckedOut();
+    
+    if (bookCheckedOut.isRenewed()) {
+      return false;
+    }
+    
+
+    Borrower borrower = bookCheckedOut.getBorrower();
+    CheckedOut borrowerCheckedOut = borrower.getCheckedOut(key);
+
+    bookCheckedOut.renewDueDate();
+    borrowerCheckedOut.renewDueDate();
 
     return true;
   }
@@ -272,20 +325,19 @@ public class LibraryDatabase implements java.io.Serializable {
   * Returns a checked out book to the library.
   *
   * @param callNumber The call number of the book to return
-  * @param copyNum The copy number of the book
   * @return true if the return was successful, false if the book does not exist
   *     or is not checked out
   */
-  public boolean returnCopy(String callNumber, int copyNum) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
+  public boolean returnBook(String key) {
+    Book book = books.get(key);
 
-    if (book == null || !book.isCheckedOut()) return false;
+    if (book == null || !(book.isCheckedOut())) 
+      return false;
 
     Borrower borrower = book.getCheckedOut().getBorrower();
 
-    borrower.removeCheckedOut(callNumber);
-    book.removeCheckedOut(callNumber);
+    borrower.removeCheckedOut(key);
+    book.removeCheckedOut(borrower.getEmail());
 
     return true;
   }
@@ -294,13 +346,11 @@ public class LibraryDatabase implements java.io.Serializable {
   * Checks whether a book is currently checked out.
   *
   * @param callNumber The call number of the book to check
-  * @param copyNum The copy number of the book
   * @return true if the book is checked out, false if the book does not exist
   *     or is not checked out
   */
-  public boolean isCheckedOut(String callNumber, int copyNum) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
+  public boolean isCheckedOut(String key) {
+    Book book = books.get(key);
     if (book == null) return false;
 
     return book.isCheckedOut();
@@ -310,12 +360,10 @@ public class LibraryDatabase implements java.io.Serializable {
   * Gets the due date of a checked out book.
   *
   * @param callNumber The call number of the book
-  * @param copyNum The copy number of the book
   * @return the due date of the book, or null if the book does not exist or is not checked out
   */
-  public LocalDate getDueDate(String callNumber, int copyNum) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
+  public LocalDate getDueDate(String key) {
+    Book book = books.get(key);
     if (book == null || !book.isCheckedOut()) return null;
 
     return book.getCheckedOut().getDueDate();
@@ -326,12 +374,13 @@ public class LibraryDatabase implements java.io.Serializable {
  * If the book is checked out, the borrower's name and due date are also included.
  *
  * @param callNumber The call number of the book to search for
- * @param copyNum The copy number of the book
  * @return a string containing the book's title, author, call number, and availability status
  */
-  public String getCopyInfo(String callNumber, int copyNum) {
-    callNumber += copyNum;
-    Book book = books.get(callNumber);
+  public String searchBook(String key) {
+    Book book = books.get(key);
+    if (book == null) {
+      return "Book not found";
+    }
     StringBuilder result = new StringBuilder();
 
     result.append("Title: " + book.getTitle() + "\n");
@@ -358,8 +407,11 @@ public class LibraryDatabase implements java.io.Serializable {
  * @param email The email of the borrower to search for
  * @return a string listing all checked out books, or a message if none are checked out
  */
-  public String getBorrowerInfo(String email) {
+  public String searchBorrower(String email) {
     Borrower borrower = borrowers.get(email);
+    if (borrower == null) {
+      return "Borrower not found";
+    }
     StringBuilder result = new StringBuilder();
 
     result.append("Name: " + borrower.getFirstName() + " " + borrower.getLastName() + "\n");
@@ -379,6 +431,118 @@ public class LibraryDatabase implements java.io.Serializable {
       }
     } else {
       result.append("No books has been checked out by this borrower.");
+    }
+    return result.toString();
+  }
+
+  // Additional methods for testing with callNumber and copy parameters
+
+  /**
+   * Checks out a book copy to a borrower.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @param email The email of the borrower
+   * @return true if successful
+   */
+  public boolean checkout(String callNumber, int copy, String email) {
+    String key = callNumber + copy;
+    return checkout(key, email);
+  }
+
+  /**
+   * Returns a checked out book copy.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @return true if successful
+   */
+  public boolean returnCopy(String callNumber, int copy) {
+    String key = callNumber + copy;
+    return returnBook(key);
+  }
+
+  /**
+   * Checks if a book copy is checked out.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @return true if checked out
+   */
+  public boolean isCheckedOut(String callNumber, int copy) {
+    String key = callNumber + copy;
+    return isCheckedOut(key);
+  }
+
+  /**
+   * Gets the due date of a checked out book copy.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @return the due date or null
+   */
+  public LocalDate getDueDate(String callNumber, int copy) {
+    String key = callNumber + copy;
+    return getDueDate(key);
+  }
+
+  /**
+   * Renews a checked out book copy.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @return true if successful
+   */
+  public boolean renew(String callNumber, int copy) {
+    String key = callNumber + copy;
+    return renew(key);
+  }
+
+  /**
+   * Gets information about a book copy.
+   *
+   * @param callNumber The call number of the book
+   * @param copy The copy number
+   * @return the book info string, or null if not found
+   */
+  public String getCopyInfo(String callNumber, int copy) {
+    String key = callNumber + copy;
+    Book book = books.get(key);
+    if (book == null) {
+      return null;
+    }
+    StringBuilder result = new StringBuilder();
+    result.append("\"" + callNumber + "\", " + copy + ", \"" + book.getTitle() + "\", \"" + book.getAuthor() + "\"");
+    if (book.isCheckedOut()) {
+      CheckedOut checkedOut = book.getCheckedOut();
+      Borrower borrower = checkedOut.getBorrower();
+      result.append(", \"" + borrower.getEmail() + "\", " + checkedOut.getDueDate() + ", " + checkedOut.isRenewed());
+    } else {
+      result.append(", Available");
+    }
+    return result.toString();
+  }
+
+  /**
+   * Gets information about a borrower.
+   *
+   * @param email The borrower's email
+   * @return the borrower info string
+   */
+  public String getBorrowerInfo(String email) {
+    Borrower borrower = borrowers.get(email);
+    if (borrower == null) {
+      return null;
+    }
+    StringBuilder result = new StringBuilder();
+    result.append("\"" + borrower.getFirstName() + "\", \"" + borrower.getLastName() + "\", \"" + borrower.getEmail() + "\", \"" + borrower.getPhone() + "\"\n");
+
+    if (borrower.hasCheckedOut()) {
+      for (Book book : borrower.getAllBooks()) {
+        String key = book.getCallNumber() + book.getCopy();
+        CheckedOut checkedOut = borrower.getCheckedOut(key);
+        result.append("* \"" + book.getCallNumber() + "\", " + book.getCopy() + ", \"" + book.getTitle() + "\", \"" + book.getAuthor() + "\", " + checkedOut.getDueDate() + ", " + checkedOut.isRenewed() + "\n");
+      }
     }
     return result.toString();
   }

@@ -71,8 +71,8 @@ public class Borrower implements java.io.Serializable {
   * @param newCheckedOut The CheckedOut record to associate
   * @return true if the record was successfully added
   */
-  public boolean addCheckedOut(String callNumber, CheckedOut newCheckedOut) {
-    checkedOut.put(callNumber, newCheckedOut);
+  public boolean addCheckedOut(String key, CheckedOut newCheckedOut) {
+    checkedOut.put(key, newCheckedOut);
     return true;
   }
 
@@ -82,8 +82,8 @@ public class Borrower implements java.io.Serializable {
   * @param callNumber The call number of the book
   * @return the CheckedOut record, or null if the book is not checked out by this borrower
   */
-  public CheckedOut getCheckedOut(String callNumber) {
-    return checkedOut.get(callNumber);
+  public CheckedOut getCheckedOut(String key) {
+    return checkedOut.get(key);
   }
 
   /**
